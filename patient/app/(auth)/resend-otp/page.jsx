@@ -26,6 +26,7 @@ export default function ResendOtp() {
       const data = await response.json()
       if (response.ok) {
         setMessage("OTP resent successfully. Please check your email.")
+        window.location.href = `/verify-otp?email=${email}`
         setError("")
       } else {
         setError(data.message || "Failed to resend OTP.")

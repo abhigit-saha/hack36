@@ -45,11 +45,7 @@ export default function VerifyOtp() {
   }
 
   const handleResend = () => {
-    if (email) {
-      window.location.href = `/resend-otp?email=${email}`
-    } else {
-      setError("Email missing in URL. Cannot resend OTP.")
-    }
+      window.location.href = `/resend-otp`
   }
 
   return (

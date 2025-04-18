@@ -24,7 +24,7 @@ export default function Register() {
       })
 
       if (response.ok) {
-        window.location.href = "/verify-otp"
+        window.location.href = `/verify-otp?email=${email}`
       } else {
         const data = await response.json()
         setError(data.message || "register failed. Please try again.")
