@@ -8,7 +8,7 @@ import { setCookie, clearCookie } from "../helper/cookieHelper.js";
 // Register user and send OTP
 
 export const Register = async (req, res) => {
-  const { email, password} = req.body;
+  const { email, password, role} = req.body;
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -17,7 +17,7 @@ export const Register = async (req, res) => {
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const newUser = new User({ email, password});
+  const newUser = new User({ email, password, role });
   await newUser.save();
 
   await otpModel.create({
@@ -32,7 +32,6 @@ export const Register = async (req, res) => {
   res.status(200).json({ message: "Registered. Please verify OTP sent to your email." });
 };
 
-// Verify OTP for registration
 export const VerifyOTP = async (req, res) => {
   const { email, otp } = req.body;
   const otpRecord = await otpModel.findOne({ email, otp });
