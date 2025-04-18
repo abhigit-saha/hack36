@@ -1,0 +1,65 @@
+/* styles/Demo.module.css */
+
+.container {
+    /* ... existing styles ... */
+    display: flex;         /* Optional: helps center content */
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .main {
+     /* ... existing styles ... */
+     width: 100%; /* Ensure main takes width */
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+  }
+  
+  .demoContainer {
+      /* Optional: add margin or padding here if needed */
+      margin-top: 20px;
+  }
+  
+  .videoContainer {
+    position: relative; /* Establishes a positioning context for the absolute canvas */
+    width: 640px;       /* Explicit width for the container */
+    height: 480px;      /* Explicit height for the container */
+    /* Remove any padding/border that could interfere */
+    padding: 0;
+    border: none;
+    overflow: hidden; /* Optional: hides anything sticking out */
+  }
+  
+  .video {
+    display: block;     /* Removes potential extra space below the video */
+    width: 100%;        /* Video fills the container width */
+    height: 100%;       /* Video fills the container height */
+    transform: scaleX(-1); /* Mirror effect */
+    object-fit: cover;  /* Optional: How video should fit if aspect ratio differs */
+  }
+  
+  .canvas {
+    position: absolute; /* Positions the canvas relative to videoContainer */
+    top: 0;
+    left: 0;
+    width: 100%;        /* Canvas fills the container width */
+    height: 100%;       /* Canvas fills the container height */
+    transform: scaleX(-1); /* Mirror effect - MUST match video */
+    /* Ensure no default browser margins/padding interfere */
+    margin: 0;
+    padding: 0;
+  }
+  
+  .loading, .error {
+    /* ... your styles ... */
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .backLink {
+      margin-bottom: 15px;
+  }
+  
+  .title {
+      margin-bottom: 15px;
+  }
