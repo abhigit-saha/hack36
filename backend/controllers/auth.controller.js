@@ -8,7 +8,7 @@ import { setCookie, clearCookie } from "../helper/cookieHelper.js";
 // Register user and send OTP
 
 export const Register = async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role} = req.body;
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -17,7 +17,7 @@ export const Register = async (req, res) => {
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const newUser = new User({ email, password, role });
+  const newUser = new User({ email, password});
   await newUser.save();
 
   await otpModel.create({
@@ -26,16 +26,10 @@ export const Register = async (req, res) => {
     expiresAt: new Date(Date.now() + 10 * 60 * 1000), // OTP expires in 10 minutes
   });
 
-  const sent = await sendEmail(
-    email,
-    "Your OTP for RehabMotion",
-    `<p>Your OTP is <strong>${otp}</strong></p>`
-  );
+  const sent = await sendEmail(email, "Your OTP for RehabMotion", `<p>Your OTP is <strong>${otp}</strong></p>`);
   if (!sent) return res.status(500).json({ message: "Failed to send OTP" });
 
-  res
-    .status(200)
-    .json({ message: "Registered. Please verify OTP sent to your email." });
+  res.status(200).json({ message: "Registered. Please verify OTP sent to your email." });
 };
 
 export const VerifyOTP = async (req, res) => {
@@ -68,11 +62,7 @@ export const ResendOTP = async (req, res) => {
     { upsert: true }
   );
 
-  const sent = await sendEmail(
-    email,
-    "Your New OTP for RehabMotion",
-    `<p>Your new OTP is <strong>${otp}</strong></p>`
-  );
+  const sent = await sendEmail(email, "Your New OTP for RehabMotion", `<p>Your new OTP is <strong>${otp}</strong></p>`);
   if (!sent) return res.status(500).json({ message: "Failed to resend OTP" });
 
   res.status(200).json({ message: "OTP resent successfully" });
@@ -93,25 +83,21 @@ export const Login = async (req, res) => {
   if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
   if (!user.verified) {
-    return res
-      .status(403)
-      .json({ message: "Account not verified. Please verify OTP." });
+    return res.status(403).json({ message: "Account not verified. Please verify OTP." });
   }
 
   // Generate JWT token
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
   // Set JWT in HTTP-only cookie
-  setCookie(res, "auth_token", token);
+  setCookie(res, 'auth_token', token);
 
   res.status(200).json({ message: "Login successful" });
 };
 
 // Logout user and clear JWT cookie
 export const Logout = (req, res) => {
-  clearCookie(res, "auth_token");
+  clearCookie(res, 'auth_token');
   res.status(200).json({ message: "Logout successful" });
 };
 
@@ -127,14 +113,9 @@ export const ForgotPassword = async (req, res) => {
   await user.save();
 
   const link = `http://localhost:3000/reset-password?token=${token}&email=${email}`;
-  const sent = await sendEmail(
-    email,
-    "Password Reset Request",
-    `<p>Click to reset your password: <a href="${link}">${link}</a></p>`
-  );
+  const sent = await sendEmail(email, "Password Reset Request", `<p>Click to reset your password: <a href="${link}">${link}</a></p>`);
 
-  if (!sent)
-    return res.status(500).json({ message: "Failed to send reset link" });
+  if (!sent) return res.status(500).json({ message: "Failed to send reset link" });
 
   res.status(200).json({ message: "Reset link sent to your email." });
 };
