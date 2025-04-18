@@ -1,22 +1,22 @@
 import { configureStore } from "@reduxjs/toolkit"
 import { persistStore, persistReducer } from "redux-persist"
-import storage from "redux-persist/lib/storage"
+import storage from "redux-persist/lib/storage" // localStorage or AsyncStorage
 import userReducer from "./authSlice"
 
 const persistConfig = {
   key: "root",
-  storage,
+  storage, 
 }
 
 const persistedReducer = persistReducer(persistConfig, userReducer)
 
 const store = configureStore({
   reducer: {
-    auth: persistedReducer, // keep the key 'auth' or change to 'user' if you prefer
+    auth: persistedReducer, // 'auth' key for storing user data
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false,
+      serializableCheck: false, // to avoid issues with non-serializable values like 'redux-persist'
     }),
 })
 

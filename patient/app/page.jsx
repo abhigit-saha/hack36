@@ -46,9 +46,11 @@ export default function HomePage() {
           <p className="text-red-500">{error}</p>
         ) : userData ? (
           <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
-            <h2 className="text-2xl font-bold text-blue-600">Welcome, Ayush 👋</h2>
+            <h2 className="text-2xl font-bold text-blue-600">
+              Welcome, {userData.name || "User"} 👋
+            </h2>
             <p><strong>Email:</strong> {userData.email}</p>
-            <p><strong>Verified:</strong> {Yes}</p>
+            <p><strong>Verified:</strong> {userData.verified ? "Yes" : "No"}</p>
             {/* <p><strong>Role:</strong> {userData.role || "Patient"}</p> */}
           </div>
         ) : (
