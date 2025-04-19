@@ -33,6 +33,27 @@ const videoSchema = new mongoose.Schema({
       trim: true,
     },
   ],
+  isPrescribed: {
+    type: Boolean,
+    default: false
+  },
+  prescribedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor'
+  },
+  prescribedTo: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  duration: {
+    type: Number,  // in minutes
+    required: true
+  },
+  difficulty: {
+    type: String,
+    enum: ['beginner', 'intermediate', 'advanced'],
+    default: 'beginner'
+  },
   createdAt: {
     type: Date,
     default: Date.now,
