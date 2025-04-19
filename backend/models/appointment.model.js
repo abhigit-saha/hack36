@@ -15,14 +15,21 @@ const AppointmentSchema = new Schema({
     type: Date,
     default: () => new Date('2025-04-21T10:00:00Z') // hardcoded
   },
-  preReport: {
-    type: String,
-    default: ""
+  preDiagnosisId: {
+    type: Schema.Types.ObjectId,
+    ref: 'PreDiagnosis'
   },
   prescription: {
     type: String,
     default: ""
+  },
+  status: {
+    type: String,
+    enum: ['scheduled', 'completed', 'cancelled'],
+    default: 'scheduled'
   }
+}, {
+  timestamps: true
 });
 
 const Appointment = mongoose.model('Appointment', AppointmentSchema);

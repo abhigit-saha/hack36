@@ -12,8 +12,9 @@ import { ChatSocketHandler } from "./controllers/chat.controller.js";
 import multer from "multer";
 import mongoose from "mongoose";
 // import AppointmentRouter from "./routes/appointment.routes.js";
+import PreDiagnosisRouter from "./routes/preDiagnosis.routes.js";
 const upload = multer({ dest: "uploads/" });
-import http from "http";
+import VideoRouter from "./routes/video.routes.js"import http from "http";
 dotenv.config();
 await connectDb();
 
@@ -40,7 +41,9 @@ app.use("/user", UserRouter);
 app.use("/doctor", DoctorRouter);
 app.use("/community", upload.single("video"), CommunityRouter);
 app.use("/chat", ChatRouter);
-// app.use("/appointment",AppointmentRouter);
+// app.use("/appointment", AppointmentRouter);
+app.use("/api", VideoRouter);
+app.use("/api/pre-diagnosis", PreDiagnosisRouter);
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://localhost:${PORT}`);
