@@ -92,7 +92,7 @@ export const Login = async (req, res) => {
   // Set JWT in HTTP-only cookie
   setCookie(res, 'auth_token', token);
 
-  res.status(200).json({ message: "Login successful" });
+  res.status(200).json({ message: "Login successful", user: { id: user._id, email: user.email, role: user.role } });
 };
 
 // Logout user and clear JWT cookie

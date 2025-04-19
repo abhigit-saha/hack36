@@ -1,8 +1,8 @@
-const mongoose = require("mongoose");
-const { Server } = require("socket.io");
-const DoctorUserChat = require("../models/doctoruserchat.model.js");
-const User = require("../models/user.model.js");
-const Doctor = require("../models/doctor.model.js");
+import mongoose from "mongoose";
+import { Server } from "socket.io";
+import DoctorUserChat from "../models/doctoruserchat.model.js";
+import User from "../models/user.model.js";
+import Doctor from "../models/doctor.model.js";
 class ChatSocketHandler {
   constructor(server) {
     this.io = new Server(server, {
@@ -429,9 +429,9 @@ const getUserChats = async (req, res) => {
       });
     }
 
-    const chats = await DoctorUserChat.find({
-      user_id: new mongoose.Types.ObjectId(user_id),
-    }).sort({ last_message_at: -1 });
+    const chats = await DoctorUserChat.find({ user_id }).sort({
+      last_message_at: -1,
+    });
 
     return res.status(200).json({
       chats: chats.map((chat) => ({
@@ -507,7 +507,7 @@ const markMessagesAsRead = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   ChatSocketHandler,
   initializeChat,
   sendMessage,

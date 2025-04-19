@@ -1,12 +1,14 @@
-const express = require("express");
-const {
+import express from "express";
+
+import {
   initializeChat,
   sendMessage,
   getChatHistory,
   getDoctorChats,
   getUserChats,
   markMessagesAsRead,
-} = require("../controllers/chat.controller.js");
+} from "../controllers/chat.controller.js";
+
 const router = express.Router();
 
 // Existing routes
@@ -17,4 +19,4 @@ router.get("/doctor/:doctor_id", getDoctorChats);
 router.get("/user/:user_id", getUserChats);
 router.post("/read", markMessagesAsRead);
 
-module.exports = router;
+export default router;

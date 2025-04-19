@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
@@ -62,7 +62,6 @@ const doctorUserChatSchema = new mongoose.Schema(
       type: Number,
       default: 1800000, // 30 minutes in milliseconds
     },
-    meetingDetails: meetingDetailsSchema,
   },
   { timestamps: true }
 );
@@ -73,4 +72,4 @@ doctorUserChatSchema.index({ doctor_id: 1, user_id: 1 }, { unique: true });
 // Add index for performance
 doctorUserChatSchema.index({ last_activity: 1, connection_status: 1 });
 
-module.exports = mongoose.model("DoctorUserChat", doctorUserChatSchema);
+export default mongoose.model("DoctorUserChat", doctorUserChatSchema);

@@ -23,6 +23,10 @@ const DoctorSchema = new Schema({
         type: String,
         required: true,
     },
+    location: {
+        type: String,
+        required: true,
+    },
 });
 
 DoctorSchema.pre('save', async function (next) {

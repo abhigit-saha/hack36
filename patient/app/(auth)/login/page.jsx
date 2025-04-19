@@ -26,9 +26,11 @@ export default function SignIn() {
       })
 
       const data = await response.json()
+      console.log("Login response:", data)
+      
 
       if (response.ok) {
-        dispatch(setUser({ email }))
+        dispatch(setUser({ ...data.user }))
         window.location.href = "/"
       } else {
         setError(data.message || "Login failed. Please try again.")
