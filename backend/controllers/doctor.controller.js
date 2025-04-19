@@ -6,7 +6,11 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 // Register a doctor
+// Register a doctor
 export const DoctorRegister = async (req, res) => {
+  const { email, name, password, liscence, specialization, location } = req.body;
+
+  try {
   const { email, name, password, liscence, specialization, location } = req.body;
 
   try {
@@ -14,6 +18,8 @@ export const DoctorRegister = async (req, res) => {
     if (existingDoctor) {
       return res.status(400).json({ message: "Doctor already exists" });
     }
+
+    const newDoctor = new Doctor({ email, name, password, liscence, specialization, location });
 
     const newDoctor = new Doctor({ email, name, password, liscence, specialization, location });
     await newDoctor.save();

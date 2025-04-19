@@ -25,3 +25,4 @@ router.post("/prescribe", prescribeExerciseVideos);
 router.get("/reports/pre-diagnosis", getPatientPreDiagnosisReports);
 
 export default router;
+
