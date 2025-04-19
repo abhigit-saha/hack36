@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import styles from '../styles/Demo.module.css';
+import { updateAngles } from '../utils/angleStore';
 // Default video path to use - change this to your video path
 const DEFAULT_VIDEO_PATH = '/Recording 2025-04-18 121201.mp4';
 
@@ -223,6 +224,9 @@ export default function VideoDemo() {
       
       // Update state with the newly calculated angles
       setCurrentAngles(calculatedAngles);
+      
+      // Send angles to the angle store
+      updateAngles(calculatedAngles, 'recorded');
 
       // Throttle sending data to LLM
       const now = Date.now();
@@ -283,7 +287,7 @@ export default function VideoDemo() {
         ctx.lineWidth = 2;
         let yPos = 20; // Start position for text
         for (const [name, angle] of Object.entries(currentAngles)) {
-          if (angle !== null) {
+          if (angle !== null && typeof angle === 'number') {
             const text = `${name}: ${angle.toFixed(1)}°`;
             ctx.strokeText(text, 15, yPos); // Draw outline first
             ctx.fillText(text, 15, yPos);   // Then fill text
@@ -397,27 +401,12 @@ export default function VideoDemo() {
 
   return (
     <div className={styles.container}>
-      <Head>
-        <title>BlazePose Video Demo with Angles</title>
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>BlazePose GHUM Video Demo with Angles</h1>
-        
-        <div className={styles.backLink}>
-          <Link href="/">Back to Home</Link>
-        </div>
+     
 
         {isLoading && <p className={styles.loading}>Loading libraries...</p>}
         {error && <p className={styles.error}>{error}</p>}
         
-        <div className={styles.controls}>
-          <h3>Current Video Path:</h3>
-          <code className={styles.path}>{videoPath}</code>
-          <p className={styles.info}>
-            To change the video path, modify the DEFAULT_VIDEO_PATH constant in video-demo.js
-          </p>
-        </div>
+        <main>
         
         <div className={styles.demoContainer}>
           <div className={styles.videoContainer}>
