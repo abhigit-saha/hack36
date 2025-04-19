@@ -8,6 +8,7 @@ import CommunityRouter from "./routes/community.routes.js";
 import DoctorRouter from "./routes/doctor.routes.js";
 import { connectDb } from "./utils/connectDb.js";
 import multer from "multer";
+import AppointmentRouter from "./routes/appointment.routes.js";
 const upload = multer({ dest: "uploads/" });
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/auth", AuthRouter);
 app.use("/user", UserRouter);
 app.use("/doctor", DoctorRouter);
 app.use("/community", upload.single("video"), CommunityRouter);
+app.use("/appointment",AppointmentRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
