@@ -6,10 +6,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 // Register a doctor
-// Register a doctor
 export const DoctorRegister = async (req, res) => {
-  const { email, name, password, liscence, specialization, location } =
-    req.body;
+  const { email, name, password, liscence, specialization, location } = req.body;
 
   try {
     const existingDoctor = await Doctor.findOne({ email });
@@ -23,13 +21,14 @@ export const DoctorRegister = async (req, res) => {
       password,
       liscence,
       specialization,
-      location,
+      location
     });
+
     await newDoctor.save();
 
-    res.status(200).json({ message: "Registered", doctor: newDoctor });
+    return res.status(200).json({ message: "Registered", doctor: newDoctor });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -37,11 +36,9 @@ export const DoctorRegister = async (req, res) => {
 export const getAllDoctors = async (req, res) => {
   try {
     const doctors = await Doctor.find({});
-    res.status(200).json(doctors);
+    return res.status(200).json(doctors);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Failed to fetch doctors", error: err.message });
+    return res.status(500).json({ message: "Failed to fetch doctors", error: err.message });
   }
 };
 
@@ -55,29 +52,25 @@ export const getFilteredDoctors = async (req, res) => {
 
   try {
     const doctors = await Doctor.find(filter);
-    res.status(200).json(doctors);
+    return res.status(200).json(doctors);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching doctors", error: err.message });
+    return res.status(500).json({ message: "Error fetching doctors", error: err.message });
   }
 };
 
+// Get doctor by ID
 export const getDoctorById = async (req, res) => {
   const { id } = req.params;
-  // console.log(id);
 
   try {
     const doctor = await Doctor.findById(id);
-    // console.log(doctor);
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
+      return res.status(404).json({ message: "Doctor not found" });
     }
-    res.status(200).json(doctor);
+    return res.status(200).json(doctor);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching doctor", error: err.message });
+    return res.status(500).json({ message: "Error fetching doctor", error: err.message });
   }
 };
 
@@ -87,25 +80,21 @@ export const prescribeExerciseVideos = async (req, res) => {
     const { appointmentId, videoIds, notes } = req.body;
     const doctorId = req.user._id;
 
-    // Verify appointment exists and belongs to doctor
-    const appointment = await Appointment.findOne({
-      _id: appointmentId,
-      doctorId,
-    });
+    const appointment = await Appointment.findOne({ _id: appointmentId, doctorId });
 
     if (!appointment) {
       throw new ApiError(404, "Appointment not found");
     }
 
-    // Get pre-diagnosis report
     const preDiagnosis = await PreDiagnosis.findOne({ appointmentId });
+
     if (!preDiagnosis) {
       throw new ApiError(404, "Pre-diagnosis report not found");
     }
 
-    // Update videos with prescription information
     await Video.updateMany(
       { _id: { $in: videoIds } },
+      {
       {
         $set: {
           isPrescribed: true,
@@ -117,23 +106,24 @@ export const prescribeExerciseVideos = async (req, res) => {
       }
     );
 
-    // Update pre-diagnosis status
     preDiagnosis.status = "prescribed";
     preDiagnosis.doctorNotes = notes;
     await preDiagnosis.save();
 
-    // Update appointment status
     appointment.status = "completed";
     await appointment.save();
 
     return res.status(200).json(
+      new ApiResponse(200, {
       new ApiResponse(200, {
         message: "Exercise videos prescribed successfully",
         preDiagnosisId: preDiagnosis._id,
       })
     );
   } catch (error) {
-    throw new ApiError(500, "Error prescribing exercise videos");
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Error prescribing exercise videos"
+    });
   }
 };
 
@@ -142,39 +132,32 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
   try {
     const doctorId = req.user._id;
 
-    // Get all appointments for this doctor
-    const appointments = await Appointment.find({ doctorId }).populate({
-      path: "preDiagnosisId",
-      populate: {
-        path: "userId",
-        select: "name email",
-      },
-    });
+    const appointments = await Appointment.find({ doctorId })
+      .populate({
+        path: 'preDiagnosisId',
+        populate: {
+          path: 'userId',
+          select: 'name email'
+        }
+      })
+      .populate('patientId', 'name email');
 
-    // Filter appointments with pre-diagnosis reports
     const reports = appointments
       .filter((app) => app.preDiagnosisId)
       .map((app) => ({
         appointmentId: app._id,
         appointmentDate: app.appointmentDate,
-        patient: app.preDiagnosisId.userId,
-        preDiagnosis: app.preDiagnosisId,
+        patient: app.patientId,
+        preDiagnosis: app.preDiagnosisId
       }));
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          reports,
-          "Pre-diagnosis reports fetched successfully"
-        )
-      );
+    return res.status(200).json(
+      new ApiResponse(200, reports, "Pre-diagnosis reports fetched successfully")
+    );
   } catch (error) {
-    throw new ApiError(500, "Error fetching pre-diagnosis reports");
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Error fetching pre-diagnosis reports"
+    });
   }
 };
 
-// Prescribe exercise videos to a patient
-
-// Get patient's pre-diagnosis reports
