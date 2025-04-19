@@ -3,23 +3,21 @@ import express from "express";
 import Video from "../models/video.model.js";
 import cloudinary from "../config/cloudinary.js";
 //helper functions (to be put in some other file )
-import { upload, postVideo } from "../controllers/community.controller.js";
-communityRouter.get("/video", upload);
+import {
+  upload,
+  postVideo,
+  getVideos,
+  likeVideo,
+  dislikeVideo,
+} from "../controllers/community.controller.js";
 
 //TODO
 // communityRouter.delete("/video");
+communityRouter.get("/video", getVideos);
 
 communityRouter.post("/video", postVideo);
 
-// communityRouter.put("/:id", (req, res) => {
-//   res.json({
-//     message: `Update community with ID: ${req.params.id}`,
-//     data: req.body,
-//   });
-// });
-
-// communityRouter.delete("/:id", (req, res) => {
-//   res.json({ message: `Delete community with ID: ${req.params.id}` });
-// });
+communityRouter.post("/video/:id/like", likeVideo);
+communityRouter.post("/video/:id/dislike", dislikeVideo);
 
 export default communityRouter;
