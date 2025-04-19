@@ -14,7 +14,7 @@ const router = Router();
 router.post("/register", DoctorRegister);
 router.get("/", getAllDoctors);
 router.get("/filter", getFilteredDoctors);
-router.get("/:id", getDoctorById);
+router.get("/profile/:id", getDoctorById);
 
 
 

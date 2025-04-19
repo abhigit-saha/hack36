@@ -104,6 +104,8 @@ export default function DoctorProfilePage() {
             }),
           });
 
+          console.log(test);
+
           router.push(`/doctors/questions?appointmentId=${test._id}`);
         },
         prefill: {
