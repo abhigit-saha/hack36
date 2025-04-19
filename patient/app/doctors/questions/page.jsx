@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
 import { RepeatIcon } from 'lucide-react';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 
 const questions = [
   "What symptoms are you currently experiencing?",
@@ -16,6 +17,8 @@ const questions = [
 ];
 
 export default function QuestionPage() {
+  const userId1 = useSelector((state) => state.auth.user)
+  console.log("userid ->",userId1);
   const searchParams = useSearchParams();
   const router = useRouter();
   const doctorId = searchParams.get('doctorId');
@@ -28,7 +31,7 @@ export default function QuestionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
-
+console.log(userId1)
   const {
     transcript,
     resetTranscript,
@@ -95,8 +98,8 @@ export default function QuestionPage() {
   };
 
   const handleSubmit = async () => {
-    if (!appointmentId) {
-      alert("Appointment ID missing in URL");
+    if (!appointmentId || !userId1) {
+      alert("Missing required information (appointment ID or user ID)");
       return;
     }
 
@@ -105,27 +108,18 @@ export default function QuestionPage() {
 
     const questionAnswerPairs = questions.map((question, index) => ({
       question,
-      answer: answers[index] || "",
+      answer: answers[index] || "No response provided",
     }));
 
     try {
-      // First, save the questions and answers to the appointment
-      const appointmentResponse = await axios.post(
-        `http://localhost:4000/appointment/question/${appointmentId}`,
-        { responses: questionAnswerPairs },
-        { withCredentials: true }
-      );
+      const userId = userId1.id;
 
-      if (!appointmentResponse.ok) {
-        throw new Error("Failed to save questions to appointment");
-      }
-
-      // Then, generate the pre-diagnosis report using Gemini AI
       const geminiResponse = await axios.post(
-        'http://localhost:4000/api/gemini/generate-report',
+        'http://localhost:4000/api/pre-diagnosis/generate',
         {
           questions: questionAnswerPairs,
-          appointmentId,
+          appointmentId: appointmentId,
+          userId: userId
         },
         { withCredentials: true }
       );
@@ -133,17 +127,15 @@ export default function QuestionPage() {
       if (geminiResponse.data && geminiResponse.data.data) {
         setReport(geminiResponse.data.data.report);
         
-        // Show success message with the report
+        // Show success message
         alert("Pre-diagnosis report generated successfully!");
         
-        // Redirect to the summary page
-        router.push(`/doctors/summary?preDiagnosisId=${geminiResponse.data.data.preDiagnosisId}`);
       } else {
         throw new Error("Failed to generate pre-diagnosis report");
       }
     } catch (error) {
       console.error("Error:", error);
-      setError(error.message || "An error occurred during submission");
+      setError(error.response?.data?.message || error.message || "An error occurred during submission");
       alert(`Submission failed: ${error.message}`);
     } finally {
       setSubmitting(false);
