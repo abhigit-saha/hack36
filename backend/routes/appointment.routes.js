@@ -5,10 +5,10 @@ import { BookAppointment, submitQuestionAnswers } from '../controllers/appointme
 
 const router = express.Router();
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_SECRET,
-});
+//const razorpay = new Razorpay({
+ // key_id: process.env.RAZORPAY_KEY_ID,
+ // key_secret: process.env.RAZORPAY_SECRET,
+//});
 
 router.post('/payment', async (req, res) => {
   const { amount } = req.body;
