@@ -17,7 +17,7 @@ export default function Navbar({ user }) {
           <Link href="/">Home</Link>
           <Link href="/appointments">Appointments</Link>
           <Link href="/doctors">Doctors</Link>
-          <Link href="/reports">Physio</Link>
+          <Link href="/physio">Physio</Link>
           <Link href="/reports">Reports</Link>
           <Link href="/profile">Profile</Link>
         </div>

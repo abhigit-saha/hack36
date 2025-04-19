@@ -356,6 +356,7 @@ export default function Community() {
           <p className="text-muted-foreground mt-1">
             Check out the latest videos from our community
           </p>
+          
         </div>
         <Button className="gap-2" onClick={() => setIsUploadModalOpen(true)}>
           <Upload size={16} />

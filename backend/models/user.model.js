@@ -1,6 +1,27 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 
+// Session subdocument schema
+const SessionSchema = new Schema({
+    video: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Video',
+        required: true
+    },
+    report: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    },
+    schedule: {
+        type: Date,
+        required: true
+    }
+});
+
 const UserSchema = new Schema({
     name: {
         type: String,
@@ -22,9 +43,14 @@ const UserSchema = new Schema({
         type: String,
         enum: ['Patient', 'Doctor', 'Hospital'],
         default: 'Patient'
+    },
+    sessions: {
+        type: [SessionSchema],
+        default: [],
     }
 });
 
+// Hash password before saving
 UserSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
         const salt = await bcrypt.genSalt(10);

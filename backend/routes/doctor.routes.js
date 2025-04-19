@@ -1,15 +1,28 @@
-import express from 'express';
+import { Router } from "express";
 import {
   DoctorRegister,
-  getAllDoctors,getFilteredDoctors,getDoctorById
-} from '../controllers/doctor.controller.js';
+  getAllDoctors,
+  getFilteredDoctors,
+  getDoctorById,
+  prescribeExerciseVideos,
+  getPatientPreDiagnosisReports
+} from "../controllers/doctor.controller.js";
 
-const router = express.Router();
+const router = Router();
 
-router.post('/register', DoctorRegister);
-router.get('/', getAllDoctors);
-router.get('/filter', getFilteredDoctors);
-router.get('/profile/:id', getDoctorById);
+// Public routes
+router.post("/register", DoctorRegister);
+router.get("/", getAllDoctors);
+router.get("/filter", getFilteredDoctors);
+router.get("/profile/:id", getDoctorById);
 
+
+
+// Prescribe exercise videos
+router.post("/prescribe", prescribeExerciseVideos);
+
+// Get patient pre-diagnosis reports
+router.get("/reports/pre-diagnosis", getPatientPreDiagnosisReports);
 
 export default router;
+

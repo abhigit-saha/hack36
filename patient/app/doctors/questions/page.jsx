@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
 import { RepeatIcon } from 'lucide-react';
+import axios from 'axios';
 
 const questions = [
   "What symptoms are you currently experiencing?",
@@ -16,6 +17,7 @@ const questions = [
 
 export default function QuestionPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const doctorId = searchParams.get('doctorId');
   const appointmentId = searchParams.get('appointmentId');
 
@@ -24,6 +26,8 @@ export default function QuestionPage() {
   const [playedOnce, setPlayedOnce] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState(null);
 
   const {
     transcript,
@@ -97,6 +101,7 @@ export default function QuestionPage() {
     }
 
     setSubmitting(true);
+    setError(null);
 
     const questionAnswerPairs = questions.map((question, index) => ({
       question,
@@ -104,22 +109,42 @@ export default function QuestionPage() {
     }));
 
     try {
-      const response = await fetch(`http://localhost:4000/appointment/question/${appointmentId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ responses: questionAnswerPairs })
-      });
+      // First, save the questions and answers to the appointment
+      const appointmentResponse = await axios.post(
+        `http://localhost:4000/appointment/question/${appointmentId}`,
+        { responses: questionAnswerPairs },
+        { withCredentials: true }
+      );
 
-      if (response.ok) {
-        alert("Answers submitted successfully! Proceeding to report/summary.");
-        // redirect to summary or payment page if needed
+      if(!appointmentResponse){
+        alert("appointment not saved");
+      }
+
+      // Then, generate the pre-diagnosis report using Gemini AI
+      const geminiResponse = await axios.post(
+        'http://localhost:4000/api/gemini/generate-report',
+        {
+          questions: questionAnswerPairs,
+          appointmentId,
+        },
+        { withCredentials: true }
+      );
+
+      if (geminiResponse.data && geminiResponse.data.data) {
+        setReport(geminiResponse.data.data.report);
+        
+        // Show success message with the report
+        alert("Pre-diagnosis report generated successfully!");
+        
+        // Redirect to the summary page
+        router.push(`/doctors/summary?preDiagnosisId=${geminiResponse.data.data.preDiagnosisId}`);
       } else {
-        alert("Something went wrong during submission.");
+        throw new Error("Failed to generate pre-diagnosis report");
       }
     } catch (error) {
-      alert("Submission failed: " + error.message);
+      console.error("Error:", error);
+      setError(error.message || "An error occurred during submission");
+      alert(`Submission failed: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -189,6 +214,19 @@ export default function QuestionPage() {
           <Button onClick={handleSubmit} disabled={submitting}>
             {submitting ? "Submitting..." : "Submit Answers"}
           </Button>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
+          <p>Error: {error}</p>
+        </div>
+      )}
+
+      {report && (
+        <div className="mt-6 p-4 bg-blue-50 rounded border border-blue-200">
+          <h3 className="text-lg font-semibold mb-2">Pre-Diagnosis Report</h3>
+          <div className="whitespace-pre-line text-sm">{report}</div>
         </div>
       )}
     </div>

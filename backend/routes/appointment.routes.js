@@ -14,7 +14,7 @@ router.post('/payment', async (req, res) => {
   const { amount } = req.body;
 
   const options = {
-    amount, 
+    amount,
     currency: 'INR',
     receipt: 'receipt_order_74394',
   };
@@ -26,7 +26,6 @@ router.post('/payment', async (req, res) => {
     res.status(500).json({ error: 'Payment order creation failed' });
   }
 });
-
 
 router.post('/question/:appointmentId', submitQuestionAnswers)
 
