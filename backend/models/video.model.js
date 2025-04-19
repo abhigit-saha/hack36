@@ -19,9 +19,6 @@ const videoSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  duration: {
-    type: Number,
-  },
   likes: {
     type: Number,
     default: 0,
@@ -29,11 +26,6 @@ const videoSchema = new mongoose.Schema({
   dislikes: {
     type: Number,
     default: 0,
-  },
-  uploadedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
   },
   tags: [
     {
