@@ -1,5 +1,3 @@
-import PreDiagnosis from '../models/preDiagnosis.model.js';
-import Appointment from '../models/appointment.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -103,68 +101,3 @@ export const generatePreDiagnosisReport = async (req, res) => {
     });
   }
 };
-
-// Get pre-diagnosis report for doctor
-export const getPreDiagnosisForDoctor = async (req, res) => {
-  try {
-    const { appointmentId } = req.params;
-    const doctorId = req.user._id;
-
-    // Verify appointment exists and belongs to doctor
-    const appointment = await Appointment.findOne({
-      _id: appointmentId,
-      doctorId
-    });
-
-    if (!appointment) {
-      throw new ApiError(404, "Appointment not found");
-    }
-
-    const preDiagnosis = await PreDiagnosis.findOne({ appointmentId })
-      .populate('userId', 'name email');
-
-    if (!preDiagnosis) {
-      throw new ApiError(404, "Pre-diagnosis report not found");
-    }
-
-    return res.status(200).json(
-      new ApiResponse(200, preDiagnosis, "Pre-diagnosis report fetched successfully")
-    );
-  } catch (error) {
-    throw new ApiError(500, "Error fetching pre-diagnosis report");
-  }
-};
-
-// Update pre-diagnosis status and doctor notes
-export const updatePreDiagnosisStatus = async (req, res) => {
-  try {
-    const { preDiagnosisId } = req.params;
-    const { status, doctorNotes } = req.body;
-    const doctorId = req.user._id;
-
-    // Verify pre-diagnosis exists and belongs to doctor's appointment
-    const preDiagnosis = await PreDiagnosis.findOne({
-      _id: preDiagnosisId,
-      appointmentId: { 
-        $in: await Appointment.find({ doctorId }).distinct('_id') 
-      }
-    });
-
-    if (!preDiagnosis) {
-      throw new ApiError(404, "Pre-diagnosis report not found");
-    }
-
-    // Update status and notes
-    preDiagnosis.status = status;
-    if (doctorNotes) {
-      preDiagnosis.doctorNotes = doctorNotes;
-    }
-    await preDiagnosis.save();
-
-    return res.status(200).json(
-      new ApiResponse(200, preDiagnosis, "Pre-diagnosis status updated successfully")
-    );
-  } catch (error) {
-    throw new ApiError(500, "Error updating pre-diagnosis status");
-  }
-}; 

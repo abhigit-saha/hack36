@@ -3,8 +3,6 @@ import Appointment from "../models/appointment.model.js";
 export const submitQuestionAnswers = async (req, res) => {
     const { appointmentId } = req.params;
     const { responses } = req.body;
-
-    console.log("Received responses:", responses, "for appointment ID:", appointmentId);
   
     try {
       // Save in DB – e.g., add it to the existing appointment
@@ -14,8 +12,7 @@ export const submitQuestionAnswers = async (req, res) => {
   
       console.log("Responses saved successfully for appointment ID:", appointmentId);
   
-      res.status(200).json({ ok:true, message: "Answers saved successfully" });
-      console.log("Response sent to client");
+      res.status(200).json({ message: "Answers saved successfully" });
     } catch (error) {
       console.error("Error saving answers:", error);
       res.status(500).json({ message: "Error saving answers" });

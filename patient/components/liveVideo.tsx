@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 // Assuming your styles are correctly set up
 import styles from '../styles/Demo1.module.css'; // Ensure this path is correct
+import { updateAngles } from '../utils/angleStore';
 
 // Define types for MediaPipe/TensorFlow if available, otherwise use 'any' cautiously
 declare global {
@@ -291,6 +292,9 @@ export default function LiveDemo() {
              }
              // Update state with the newly calculated angles
              setCurrentAngles(calculatedAngles);
+             
+             // Send angles to the angle store
+             updateAngles(calculatedAngles, 'live');
 
              // Throttle sending data to LLM
              const now = Date.now();

@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../../components/ui/card";
-import { Button } from "../../../../components/ui/button";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { Button } from '../../../../components/ui/button';
+import { Mail, Award, MapPin, Clock, User, Stethoscope, Calendar } from 'lucide-react';
 
 export default function DoctorProfilePage() {
   const params = useParams();
@@ -129,40 +125,89 @@ export default function DoctorProfilePage() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (!doctor || !patient)
-    return <div className="p-6 text-red-500">Doctor or Patient not found.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xl text-teal-400">Loading doctor profile...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!doctor || !patient) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center">
+        <div className="bg-[#161B22] p-8 rounded-xl border border-red-800 shadow-lg text-center">
+          <h2 className="text-2xl font-bold text-red-400 mb-4">Doctor or Patient not found</h2>
+          <p className="text-gray-400">Please try again later or contact support.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold">
-            Dr. {doctor.name}
-          </CardTitle>
-          <p className="text-muted-foreground">{doctor.specialization}</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p>
-            <strong>Email:</strong> {doctor.email}
-          </p>
-          <p>
-            <strong>License:</strong> {doctor.liscence}
-          </p>
-          <p>
-            <strong>Location:</strong> {doctor.location}
-          </p>
-          <p>
-            <strong>Experience:</strong> {doctor.experience || "Not specified"}
-          </p>
-          <p>
-            <strong>About:</strong> {doctor.bio || "No bio provided"}
-          </p>
-          <Button className="mt-4" onClick={handleBook}>
-            Book Appointment (₹500)
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-[#0A0A0C] text-gray-200">
+      <div className="max-w-4xl mx-auto p-8">
+        <div className="flex items-center gap-3 mb-8">
+          <Stethoscope className="h-8 w-8 text-teal-400" />
+          <h1 className="text-3xl font-bold text-teal-400">Doctor Profile</h1>
+        </div>
+
+        <Card className="bg-[#161B22] border-gray-800 shadow-xl shadow-teal-900/10">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-[#21262D] flex items-center justify-center">
+                <User className="w-10 h-10 text-teal-400" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold text-teal-400">Dr. {doctor.name}</CardTitle>
+                <p className="text-gray-400 mt-1">{doctor.specialization}</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center gap-3 text-gray-300">
+                <Mail className="h-5 w-5 text-teal-400" />
+                <span>{doctor.email}</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <Award className="h-5 w-5 text-teal-400" />
+                <span>License: {doctor.liscence}</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <MapPin className="h-5 w-5 text-teal-400" />
+                <span>{doctor.location}</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <Clock className="h-5 w-5 text-teal-400" />
+                <span>Experience: {doctor.experience || 'Not specified'}</span>
+              </div>
+            </div>
+
+            {doctor.bio && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-teal-400 mb-3">About</h3>
+                <p className="text-gray-300 bg-[#21262D] p-4 rounded-lg border border-gray-700">
+                  {doctor.bio}
+                </p>
+              </div>
+            )}
+
+            <div className="pt-6">
+              <Button
+                onClick={handleBook}
+                className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 flex items-center gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                Book Appointment (₹500)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

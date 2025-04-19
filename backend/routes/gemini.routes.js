@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
   generateReport,
   getReportById,
@@ -7,9 +6,6 @@ import {
 } from "../controllers/gemini.controller.js";
 
 const router = Router();
-
-// Apply JWT verification middleware to all routes
-router.use(verifyJWT);
 
 // Generate pre-diagnosis report using Gemini AI
 router.post("/generate-report", generateReport);
