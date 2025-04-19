@@ -1,20 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useDispatch } from "react-redux"
-import { ActivityIcon } from "lucide-react"
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { ActivityIcon } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Input } from "../../../components/ui/input"
-import { Label } from "../../../components/ui/label"
-import { Button } from "../../../components/ui/button"
-import { setUser } from "../../../redux/authSlice"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Button } from "../../../components/ui/button";
+import { setUser } from "../../../redux/authSlice";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const dispatch = useDispatch()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const dispatch = useDispatch();
 
   const handleSubmit = async () => {
     try {
@@ -23,21 +29,21 @@ export default function SignIn() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, password }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        dispatch(setUser({ email }))
-        window.location.href = "/"
+        dispatch(setUser({ email }));
+        window.location.href = "/";
       } else {
-        setError(data.message || "Login failed. Please try again.")
+        setError(data.message || "Login failed. Please try again.");
       }
     } catch (err) {
-      console.error("Login error:", err)
-      setError("An error occurred. Please try again later.")
+      console.error("Login error:", err);
+      setError("An error occurred. Please try again later.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-muted flex items-center justify-center px-4">
@@ -83,5 +89,5 @@ export default function SignIn() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

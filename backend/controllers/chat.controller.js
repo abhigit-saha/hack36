@@ -382,6 +382,8 @@ const getChatHistory = async (req, res) => {
   }
 };
 
+
+
 // Get all chats for a doctor
 const getDoctorChats = async (req, res) => {
   try {

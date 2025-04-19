@@ -14,7 +14,8 @@ import mongoose from "mongoose";
 // import AppointmentRouter from "./routes/appointment.routes.js";
 import PreDiagnosisRouter from "./routes/preDiagnosis.routes.js";
 const upload = multer({ dest: "uploads/" });
-import VideoRouter from "./routes/video.routes.js"import http from "http";
+import VideoRouter from "./routes/video.routes.js";
+import http from "http";
 dotenv.config();
 await connectDb();
 
