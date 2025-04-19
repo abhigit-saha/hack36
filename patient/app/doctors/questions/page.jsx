@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
-import { RepeatIcon } from 'lucide-react';
+import { RepeatIcon, Mic, MicOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
 const questions = [
@@ -155,80 +155,150 @@ export default function QuestionPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-6">
-      {current < questions.length ? (
-        <>
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Question {current + 1}</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={speakQuestion}
-              className="flex gap-2 text-blue-600"
-            >
-              <RepeatIcon className="w-4 h-4" />
-              Repeat
-            </Button>
-          </div>
-
-          <p className="text-gray-700">{questions[current]}</p>
-
-          <div className="p-4 bg-gray-100 rounded">
-            <p className="text-sm text-gray-600 mb-2">Your Answer:</p>
-            <p className="min-h-[60px] bg-white p-2 rounded border">
-              {transcript || "Start speaking to answer..."}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={listening ? stopListening : startListening}>
-              {listening ? "Stop Recording" : "Start Answering"}
-            </Button>
-
-            {transcript && (
-              <Button variant="secondary" onClick={handleRecordAgain}>
-                Record Again
+    <div className="min-h-screen bg-[#0A0A0C] text-gray-200">
+      <div className="max-w-2xl mx-auto p-8">
+        {current < questions.length ? (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-teal-400">Question {current + 1}</h2>
+                <span className="text-sm text-gray-400">({current + 1}/{questions.length})</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={speakQuestion}
+                className="flex gap-2 text-teal-400 hover:text-teal-300 hover:bg-[#1A1F2A] transition-all duration-300"
+              >
+                <RepeatIcon className="w-4 h-4" />
+                Repeat
               </Button>
-            )}
+            </div>
 
-            {current === questions.length - 1 ? (
+            <div className="bg-[#161B22] p-6 rounded-xl border border-gray-800 shadow-lg">
+              <p className="text-xl text-gray-200">{questions[current]}</p>
+            </div>
+
+            <div className="bg-[#161B22] p-6 rounded-xl border border-gray-800 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <p className="text-sm text-gray-400">Your Answer:</p>
+                {listening && (
+                  <div className="flex items-center gap-1 text-teal-400">
+                    <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></div>
+                    <span className="text-xs">Recording...</span>
+                  </div>
+                )}
+              </div>
+              <div className="min-h-[100px] bg-[#21262D] p-4 rounded-lg border border-gray-700">
+                <p className="text-gray-200">
+                  {transcript || (
+                    <span className="text-gray-500 italic">Start speaking to answer...</span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <Button
+                onClick={listening ? stopListening : startListening}
+                className={`flex items-center gap-2 ${
+                  listening
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-teal-600 hover:bg-teal-700'
+                } text-white transition-all duration-300`}
+              >
+                {listening ? (
+                  <>
+                    <MicOff className="w-4 h-4" />
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    Start Answering
+                  </>
+                )}
+              </Button>
+
+              {transcript && (
+                <Button
+                  variant="outline"
+                  onClick={handleRecordAgain}
+                  className="border-gray-700 hover:border-teal-500 text-gray-300 hover:text-teal-300 transition-all duration-300"
+                >
+                  Record Again
+                </Button>
+              )}
+
+              {current === questions.length - 1 ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={listening || submitting || transcript.trim().length < 5}
+                  className="bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Submitting...
+                    </span>
+                  ) : (
+                    'Submit Answers'
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNext}
+                  disabled={listening || transcript.trim().length < 5}
+                  className="bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center space-y-6">
+            <div className="bg-[#161B22] p-8 rounded-xl border border-gray-800 shadow-lg">
+              <CheckCircle2 className="w-16 h-16 text-teal-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-teal-400 mb-2">Thank you for answering!</h2>
+              <p className="text-gray-400 mb-6">Your responses will help us provide better care.</p>
               <Button
                 onClick={handleSubmit}
-                disabled={listening || submitting || transcript.trim().length < 5}
+                disabled={submitting}
+                className="bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Submitting..." : "Submit Answers"}
+                {submitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Submitting...
+                  </span>
+                ) : (
+                  'Submit Answers'
+                )}
               </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                disabled={listening || transcript.trim().length < 5}
-              >
-                Next
-              </Button>
-            )}
+            </div>
           </div>
-        </>
-      ) : (
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold">Thank you for answering!</h2>
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Submitting..." : "Submit Answers"}
-          </Button>
-        </div>
-      )}
+        )}
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
-          <p>Error: {error}</p>
-        </div>
-      )}
+        {error && (
+          <div className="mt-6 p-4 bg-[#1A1F2A] border border-red-800 rounded-xl shadow-lg">
+            <div className="flex items-center gap-2 text-red-400">
+              <AlertCircle className="w-5 h-5" />
+              <h3 className="font-semibold">Error</h3>
+            </div>
+            <p className="mt-2 text-gray-300">{error}</p>
+          </div>
+        )}
 
-      {report && (
-        <div className="mt-6 p-4 bg-blue-50 rounded border border-blue-200">
-          <h3 className="text-lg font-semibold mb-2">Pre-Diagnosis Report</h3>
-          <div className="whitespace-pre-line text-sm">{report}</div>
-        </div>
-      )}
+        {report && (
+          <div className="mt-6 p-6 bg-[#161B22] rounded-xl border border-gray-800 shadow-lg">
+            <h3 className="text-xl font-bold text-teal-400 mb-4">Pre-Diagnosis Report</h3>
+            <div className="whitespace-pre-line text-gray-300 bg-[#21262D] p-4 rounded-lg border border-gray-700">
+              {report}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
