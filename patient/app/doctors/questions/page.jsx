@@ -116,8 +116,8 @@ export default function QuestionPage() {
         { withCredentials: true }
       );
 
-      if (!appointmentResponse.ok) {
-        throw new Error("Failed to save questions to appointment");
+      if(!appointmentResponse){
+        alert("appointment not saved");
       }
 
       // Then, generate the pre-diagnosis report using Gemini AI
