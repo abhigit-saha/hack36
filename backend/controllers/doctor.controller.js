@@ -6,6 +6,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { setCookie } from "../helper/cookieHelper.js";
 import jwt from "jsonwebtoken"
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 
 // Register a doctor
@@ -38,6 +42,45 @@ export const DoctorRegister = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+export const SuggestDoctor = async (req, res) => {
+  const { text } = req.body;
+
+  if (!text) {
+    return res.status(400).json({ message: "Text input is required." });
+  }
+
+  try {
+    const prompt = `
+      You are a smart medical AI assistant. Based on the user's condition described below, 
+      decide whether they should consult a "Mental" doctor or a "Physiotherapist".
+      
+      Respond with only one word: "Mental" or "Physiotherapist".
+
+      Patient Condition:
+      ${text}
+    `;
+
+    // Assuming genAI is already initialized globally
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+    const result = await model.generateContent(prompt);
+    const answer = result.response.text().trim();
+
+    // Clean and validate response
+    const cleanedAnswer = answer.toLowerCase().includes("mental")
+      ? "Mental Doctor"
+      : "Physiotherapist";
+
+    console.log("AI Recommendation:", cleanedAnswer);
+
+    return res.status(200).json({ recommendation: cleanedAnswer });
+  } catch (error) {
+    console.error("Error suggesting doctor:", error);
+    return res.status(500).json({ message: "Failed to generate recommendation.", error: error.message });
+  }
+};
+
 
 export const GetDoctor = async (req, res) => {
   try {

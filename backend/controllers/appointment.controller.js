@@ -10,6 +10,8 @@ export const submitQuestionAnswers = async (req, res) => {
         preReport: JSON.stringify(responses)
       });
   
+      console.log("Responses saved successfully for appointment ID:", appointmentId);
+  
       res.status(200).json({ message: "Answers saved successfully" });
     } catch (error) {
       console.error("Error saving answers:", error);
