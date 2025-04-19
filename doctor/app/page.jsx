@@ -1,12 +1,31 @@
 'use client'
 
+import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
+import { useRouter } from "next/navigation"
 import Navbar from "../components/Navbar"
 import { Leaf, MapPin, Mail, CheckCircle, Award } from "lucide-react"
 
 export default function HomePage() {
   const { user, isAuthenticated } = useSelector((state) => state.auth)
-  console.log("User data from Redux:", user);
+  const [appointments, setAppointments] = useState([])
+  const router = useRouter()
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user?.id) return;
+
+      try {
+        const res = await fetch(`http://localhost:4000/doctorD/getAppointments?doctorId=${user.id}`)
+        const data = await res.json()
+        setAppointments(data)
+      } catch (error) {
+        console.error("Error fetching appointments:", error)
+      }
+    }
+
+    fetchAppointments()
+  }, [user])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FFF5F2] to-[#F0F9F5]">

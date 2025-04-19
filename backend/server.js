@@ -14,7 +14,8 @@ import mongoose from "mongoose";
 import AppointmentRouter from "./routes/appointment.routes.js";
 import PreDiagnosisRouter from "./routes/preDiagnosis.routes.js";
 const upload = multer({ dest: "uploads/" });
-import VideoRouter from "./routes/video.routes.js";
+import VideoRouter from "./routes/video.routes.js"
+import DoctorDashboardRouter from "./routes/doctor-dashboard.routes.js"
 import http from "http";
 dotenv.config();
 await connectDb();
@@ -46,6 +47,7 @@ app.use("/chat", ChatRouter);
 app.use("/appointment", AppointmentRouter);
 app.use("/video", VideoRouter);
 app.use("/api/pre-diagnosis", PreDiagnosisRouter);
+app.use("/doctorD",DoctorDashboardRouter);
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://localhost:${PORT}`);

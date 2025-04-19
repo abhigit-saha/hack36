@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, Leaf, Heart, User } from "lucide-react"
+import { Menu, X, Heart, Leaf, User } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 export default function Navbar({ user }) {
@@ -13,23 +13,23 @@ export default function Navbar({ user }) {
   const isActive = (path) => pathname === path
 
   return (
-    <nav className="bg-gradient-to-r from-[#FFF5F2] to-[#F0F9F5] backdrop-blur-sm sticky top-0 z-50 border-b border-[#F8B195]/10">
+    <nav className="bg-[#1A1D2A]/95 backdrop-blur-sm sticky top-0 z-50 border-b border-[#333853]">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
-        {/* Logo with leaf icon */}
+        {/* Logo with heart icon */}
         <div className="flex items-center">
-          <div className="mr-2 text-[#4FB286]">
+          <div className="mr-2">
             <Heart className="h-5 w-5 fill-[#F67280] stroke-[#F67280]" />
           </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-[#F67280] to-[#4FB286] bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-[#F67280] to-[#96E6B3] bg-clip-text text-transparent">
             CareConnect
           </h1>
 
           {/* Decorative element */}
-          <div className="absolute left-32 top-1/2 -translate-y-1/2 w-24 h-[1px] bg-gradient-to-r from-[#F8B195]/20 to-transparent hidden md:block"></div>
+          <div className="absolute left-32 top-1/2 -translate-y-1/2 w-24 h-[1px] bg-gradient-to-r from-[#F67280]/20 to-transparent hidden md:block"></div>
         </div>
 
         {/* Desktop menu */}
-        <div className="hidden md:flex space-x-1 text-[#3A4F41] font-medium">
+        <div className="hidden md:flex space-x-1 text-[#B8BCCF] font-medium">
           {[
             { href: "/", label: "Home" },
             { href: "/appointments", label: "Appointments" },
@@ -43,8 +43,8 @@ export default function Navbar({ user }) {
               href={link.href}
               className={`px-4 py-2 rounded-full transition-all duration-300 ${
                 isActive(link.href)
-                  ? "bg-[#F8B195]/10 text-[#F67280] font-semibold"
-                  : "hover:bg-[#96E6B3]/10 hover:text-[#4FB286]"
+                  ? "bg-[#F67280]/10 text-[#F67280] font-semibold"
+                  : "hover:bg-[#96E6B3]/10 hover:text-[#96E6B3]"
               }`}
             >
               {link.label}
@@ -55,9 +55,9 @@ export default function Navbar({ user }) {
         {/* User profile avatar if logged in */}
         {user ? (
           <div className="hidden md:flex items-center ml-4">
-            <div className="bg-gradient-to-r from-[#F8B195] to-[#F67280] p-[1px] rounded-full">
-              <div className="bg-white p-[2px] rounded-full">
-                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gradient-to-r from-[#F8B195] to-[#F67280] text-white font-bold">
+            <div className="bg-gradient-to-r from-[#F67280] to-[#96E6B3] p-[1px] rounded-full">
+              <div className="bg-[#1A1D2A] p-[2px] rounded-full">
+                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gradient-to-r from-[#F67280] to-[#96E6B3] text-white font-bold">
                   {user.name?.charAt(0) || "U"}
                 </div>
               </div>
@@ -66,7 +66,7 @@ export default function Navbar({ user }) {
         ) : (
           <Link
             href="/login"
-            className="hidden md:block bg-gradient-to-r from-[#F8B195] to-[#F67280] text-white px-4 py-2 rounded-full font-medium text-sm shadow-sm hover:shadow-md transition-all duration-300"
+            className="hidden md:block bg-gradient-to-r from-[#F67280] to-[#F8B195] text-white px-4 py-2 rounded-full font-medium text-sm shadow-sm hover:shadow-[#F67280]/20 transition-all duration-300"
           >
             Sign In
           </Link>
@@ -74,20 +74,20 @@ export default function Navbar({ user }) {
 
         {/* Hamburger icon */}
         <button
-          className="md:hidden focus:outline-none z-50 w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#F8B195]/10 transition-colors duration-300"
+          className="md:hidden focus:outline-none z-50 w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#F67280]/10 transition-colors duration-300"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? (
             <X className="h-5 w-5 text-[#F67280]" />
           ) : (
-            <Menu className="h-5 w-5 text-[#3A4F41]" />
+            <Menu className="h-5 w-5 text-[#E2E4EE]" />
           )}
         </button>
       </div>
 
       {/* Slide-in mobile menu from right */}
       <div
-        className={`fixed top-0 right-0 h-full w-72 bg-gradient-to-b from-[#FFF5F2] to-[#F0F9F5] shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
+        className={`fixed top-0 right-0 h-full w-72 bg-[#22253A] shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         } md:hidden`}
       >
@@ -95,28 +95,28 @@ export default function Navbar({ user }) {
         <div className="absolute top-10 right-10 text-[#96E6B3]/10">
           <Leaf size={120} />
         </div>
-        <div className="absolute bottom-10 left-5 w-16 h-16 bg-[#F8B195]/10 rounded-full"></div>
+        <div className="absolute bottom-10 left-5 w-16 h-16 bg-[#F67280]/10 rounded-full"></div>
 
         {/* User info in mobile menu */}
         {user ? (
-          <div className="px-6 pt-16 pb-6 border-b border-[#F8B195]/10 flex items-center">
-            <div className="bg-gradient-to-r from-[#F8B195] to-[#F67280] p-[1px] rounded-full mr-3">
-              <div className="bg-white p-[2px] rounded-full">
-                <div className="h-10 w-10 rounded-full flex items-center justify-center bg-gradient-to-r from-[#F8B195] to-[#F67280] text-white font-bold">
+          <div className="px-6 pt-16 pb-6 border-b border-[#333853] flex items-center">
+            <div className="bg-gradient-to-r from-[#F67280] to-[#96E6B3] p-[1px] rounded-full mr-3">
+              <div className="bg-[#22253A] p-[2px] rounded-full">
+                <div className="h-10 w-10 rounded-full flex items-center justify-center bg-gradient-to-r from-[#F67280] to-[#96E6B3] text-white font-bold">
                   {user.name?.charAt(0) || "U"}
                 </div>
               </div>
             </div>
             <div>
-              <p className="font-medium text-[#3A4F41]">{user.name || "User"}</p>
-              <p className="text-xs text-[#5D7A64]">{user.email}</p>
+              <p className="font-medium text-[#E2E4EE]">{user.name || "User"}</p>
+              <p className="text-xs text-[#B8BCCF]">{user.email}</p>
             </div>
           </div>
         ) : (
-          <div className="px-6 pt-16 pb-6 border-b border-[#F8B195]/10">
+          <div className="px-6 pt-16 pb-6 border-b border-[#333853]">
             <Link
               href="/login"
-              className="block bg-gradient-to-r from-[#F8B195] to-[#F67280] text-white px-4 py-2 rounded-full font-medium text-center shadow-sm"
+              className="block bg-gradient-to-r from-[#F67280] to-[#F8B195] text-white px-4 py-2 rounded-full font-medium text-center shadow-sm"
               onClick={() => setMenuOpen(false)}
             >
               Sign In
@@ -139,12 +139,12 @@ export default function Navbar({ user }) {
               href={link.href}
               className={`flex items-center px-4 py-3 rounded-xl transition-all duration-300 ${
                 isActive(link.href)
-                  ? "bg-[#F8B195]/10 text-[#F67280] font-semibold"
-                  : "hover:bg-[#96E6B3]/10 hover:text-[#4FB286] text-[#3A4F41]"
+                  ? "bg-[#F67280]/10 text-[#F67280] font-semibold"
+                  : "hover:bg-[#96E6B3]/10 hover:text-[#96E6B3] text-[#B8BCCF]"
               }`}
               onClick={() => setMenuOpen(false)}
             >
-              <span className={`mr-3 ${isActive(link.href) ? "text-[#F67280]" : "text-[#5D7A64]"}`}>
+              <span className={`mr-3 ${isActive(link.href) ? "text-[#F67280]" : "text-[#686E8A]"}`}>
                 {link.icon}
               </span>
               {link.label}
@@ -153,8 +153,13 @@ export default function Navbar({ user }) {
         </div>
 
         {/* Footer in mobile menu */}
-        <div className="absolute bottom-8 left-0 right-0 text-center text-xs text-[#5D7A64]">
-          <p>© {new Date().getFullYear()} CareConnect</p>
+        <div className="absolute bottom-8 left-0 right-0 text-center text-xs text-[#686E8A]">
+          <div className="flex justify-center items-center mb-1">
+            <Heart className="h-3 w-3 fill-[#F67280]/40 stroke-[#F67280]/40 mr-1" />
+            <span className="text-xs bg-gradient-to-r from-[#F67280] to-[#96E6B3] bg-clip-text text-transparent">
+              CareConnect
+            </span>
+          </div>
           <p className="mt-1">Healing through compassion</p>
         </div>
       </div>
@@ -162,7 +167,7 @@ export default function Navbar({ user }) {
       {/* Overlay when mobile menu is open */}
       {menuOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden"
           onClick={() => setMenuOpen(false)}
         ></div>
       )}
@@ -170,7 +175,7 @@ export default function Navbar({ user }) {
   )
 }
 
-// Import these icons at the top
+// Define icon components
 function Calendar(props) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>

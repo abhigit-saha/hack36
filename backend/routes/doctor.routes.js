@@ -5,7 +5,8 @@ import {
   getFilteredDoctors,
   getDoctorById,
   prescribeExerciseVideos,
-  getPatientPreDiagnosisReports,LoginDoctor, GetDoctor
+  getPatientPreDiagnosisReports,LoginDoctor, GetDoctor,
+  SuggestDoctor
 } from "../controllers/doctor.controller.js";
 import { DoctorLogin } from "../controllers/auth.controller.js";
 
@@ -18,6 +19,7 @@ router.get("/filter", getFilteredDoctors);
 router.get("/profile/:id", getDoctorById);
 router.post("/login",LoginDoctor);
 router.get("/me",GetDoctor)
+router.post("/suggest",SuggestDoctor);
 
 
 

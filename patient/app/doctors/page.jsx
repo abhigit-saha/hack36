@@ -1,42 +1,52 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader } from '../../components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
-import { Input } from '../../components/ui/input';
+import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardHeader } from '../../components/ui/card'
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover'
+import { Input } from '../../components/ui/input'
 
 const DoctorsPage = () => {
-  const [doctors, setDoctors] = useState([]);
-  const [filterType, setFilterType] = useState('specialization');
-  const [filterValue, setFilterValue] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [doctors, setDoctors] = useState([])
+  const [filterType, setFilterType] = useState('specialization')
+  const [filterValue, setFilterValue] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+
+  const searchParams = useSearchParams()
+  const specializationFromQuery = searchParams.get('specialization')
 
   const fetchDoctors = async (filterType = '', value = '') => {
-    setIsLoading(true);
-    let url = 'http://localhost:4000/doctor/filter';
+    setIsLoading(true)
+    let url = 'http://localhost:4000/doctor/filter'
     if (filterType && value) {
-      url += `?${filterType}=${value}`;
+      url += `?${filterType}=${encodeURIComponent(value)}`
     }
 
     try {
-      const res = await fetch(url);
-      const data = await res.json();
-      setDoctors(data);
+      const res = await fetch(url)
+      const data = await res.json()
+      setDoctors(data)
     } catch (err) {
-      console.error('Failed to fetch doctors:', err);
+      console.error('Failed to fetch doctors:', err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchDoctors();
-  }, []);
+    if (specializationFromQuery) {
+      setFilterType('specialization')
+      setFilterValue(specializationFromQuery)
+      fetchDoctors('specialization', specializationFromQuery)
+    } else {
+      fetchDoctors()
+    }
+  }, [specializationFromQuery])
 
   const handleFilter = () => {
-    fetchDoctors(filterType, filterValue);
-  };
+    fetchDoctors(filterType, filterValue)
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -96,7 +106,7 @@ const DoctorsPage = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default DoctorsPage;
+export default DoctorsPage

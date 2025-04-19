@@ -48,7 +48,6 @@ import {
 import { cn } from "../../lib/utils";
 
 const ChatPage = () => {
-  // Keep all the state and functions the same
   const [doctor, setDoctor] = useState(null);
   const [socket, setSocket] = useState(null);
   const [chats, setChats] = useState([]);
@@ -66,16 +65,203 @@ const ChatPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingVideos, setLoadingVideos] = useState(false);
 
-  // Keep all the existing useEffects and functions the same
-
   // Connect to socket server and load initial data
   useEffect(() => {
-    // ... existing code ...
-  }, []);
+    const fetchData = async () => {
+      // Get current doctor from session/localStorage
+      const currentDoctor = await fetch("http://localhost:4000/doctor/me", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!currentDoctor.ok) {
+        router.push("/login");
+        return;
+      }
+      const doctorData = await currentDoctor.json();
+      console.log("DOCTOR DATA:", doctorData);
+      setDoctor(doctorData);
+
+      // Connect to socket server
+      const socketInstance = io("http://localhost:4000", {
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+      setSocket(socketInstance);
+
+      // Fetch doctor's chats
+      console.log("Doctor data from outside fetchdoctor chats:", doctorData);
+      await fetchDoctorChats(doctorData.doctor._id);
+
+      // Socket event listeners
+      socketInstance.on("connect", () => {
+        console.log("Connected to socket server");
+      });
+
+      socketInstance.on("disconnect", () => {
+        console.log("Disconnected from socket server");
+      });
+
+      socketInstance.on("error", (data) => {
+        console.error("Socket error:", data.message);
+      });
+
+      socketInstance.on("ping", () => {
+        socketInstance.emit("pong");
+      });
+
+      socketInstance.on("new_message", (data) => {
+        // Update messages if in the current chat
+        if (currentChat && data.chat_id === currentChat.chat_id) {
+          setMessages((prev) => [...prev, data.message]);
+
+          // Mark message as read
+          if (data.message.sender_type !== "doctor") {
+            socketInstance.emit("mark_read", {
+              chat_id: data.chat_id,
+              reader_type: "doctor",
+              message_id: data.message._id,
+            });
+          }
+        }
+
+        // Update chat list with new message
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.chat_id === data.chat_id
+              ? {
+                  ...chat,
+                  last_message: data.message,
+                  unread_count:
+                    currentChat && currentChat.chat_id === data.chat_id
+                      ? 0
+                      : (chat.unread_count || 0) +
+                        (data.message.sender_type !== "doctor" ? 1 : 0),
+                }
+              : chat
+          )
+        );
+      });
+
+      socketInstance.on("typing_start", (data) => {
+        if (
+          currentChat &&
+          data.chat_id === currentChat.chat_id &&
+          data.user_type === "user"
+        ) {
+          setTyping(true);
+        }
+      });
+
+      socketInstance.on("typing_stop", (data) => {
+        if (
+          currentChat &&
+          data.chat_id === currentChat.chat_id &&
+          data.user_type === "user"
+        ) {
+          setTyping(false);
+        }
+      });
+
+      return () => {
+        if (socketInstance) {
+          socketInstance.disconnect();
+        }
+      };
+    };
+
+    fetchData();
+  }, [router]);
+
+  // Handle socket events for the current chat
+  useEffect(() => {
+    if (!socket || !currentChat || !doctor) return;
+
+    // Join the current chat room
+    socket.emit("join_chat", {
+      chat_id: currentChat.chat_id,
+      user_id: doctor.doctor.id,
+      user_type: "doctor",
+    });
+
+    // Mark messages as read
+    socket.emit("mark_read", {
+      chat_id: currentChat.chat_id,
+      reader_type: "doctor",
+    });
+
+    // Update unread count in chat list
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.chat_id === currentChat.chat_id
+          ? { ...chat, unread_count: 0 }
+          : chat
+      )
+    );
+
+    return () => {
+      // Leave the chat room when component unmounts or chat changes
+      socket.emit("leave_chat", {
+        chat_id: currentChat.chat_id,
+        user_id: doctor.doctor.id,
+        user_type: "doctor",
+      });
+    };
+  }, [socket, currentChat, doctor]);
+
+  // Fetch doctor's chats
+  const fetchDoctorChats = async (doctorId) => {
+    try {
+      setLoading(true);
+      console.log("FETCHING CHATS FOR DOCTOR ID", doctorId);
+      const response = await fetch(
+        `http://localhost:4000/chat/doctor/${doctorId}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch chats");
+      }
+
+      const data = await response.json();
+      console.log("Doctor Chats:", data.chats);
+      setChats(data.chats);
+
+      // Select the first chat by default if available
+      if (data.chats.length > 0 && !currentChat) {
+        setCurrentChat(data.chats[0]);
+        fetchChatHistory(data.chats[0].chat_id);
+      }
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch community videos for recommendation
   const fetchCommunityVideos = async () => {
-    // ... existing code ...
+    setLoadingVideos(true);
+    try {
+      const response = await fetch("http://localhost:4000/community/video", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch videos");
+      }
+
+      const data = await response.json();
+      console.log("Data video: ", data);
+      setVideos(data.data);
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      alert("Failed to load videos. Please try again.");
+    } finally {
+      setLoadingVideos(false);
+    }
   };
 
   // Open recommend modal
@@ -101,10 +287,12 @@ const ChatPage = () => {
         }),
         credentials: "include",
       });
-      console.log("RESPONSE GOTTEN: ", await response.json())
       if (!response.ok) {
         throw new Error("Failed to recommend video");
       }
+
+      const responseData = await response.json();
+      console.log("RESPONSE GOTTEN: ", responseData);
 
       // Send notification through socket
       socket.emit("send_message", {
@@ -136,81 +324,153 @@ const ChatPage = () => {
     );
   };
 
-  // Keep all the other functions the same
+  // Fetch chat history for the selected chat
+  const fetchChatHistory = async (chatId) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `http://localhost:4000/chat/history/${chatId}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch chat history");
+      }
+
+      const data = await response.json();
+      setMessages(data.data.messages);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle chat selection
+  const handleChatSelect = (chat) => {
+    setCurrentChat(chat);
+    fetchChatHistory(chat.chat_id);
+  };
+
+  // Handle message input change with typing indicator
+  const handleMessageChange = (e) => {
+    setMessage(e.target.value);
+
+    if (socket && currentChat && doctor) {
+      if (e.target.value) {
+        socket.emit("typing_start", {
+          chat_id: currentChat.chat_id,
+          user_id: doctor.doctor.id,
+          user_type: "doctor",
+        });
+      } else {
+        socket.emit("typing_stop", {
+          chat_id: currentChat.chat_id,
+          user_id: doctor.doctor.id,
+          user_type: "doctor",
+        });
+      }
+    }
+  };
+
+  // Send a message
+  const sendMessage = () => {
+    if (!message.trim() || !socket || !currentChat || !doctor) return;
+
+    const messageData = {
+      chat_id: currentChat.chat_id,
+      sender_id: doctor.doctor.id,
+      sender_type: "doctor",
+      content: message,
+    };
+
+    socket.emit("send_message", messageData);
+    setMessage("");
+
+    // Stop typing indicator
+    socket.emit("typing_stop", {
+      chat_id: currentChat.chat_id,
+      user_id: doctor.doctor.id,
+      user_type: "doctor",
+    });
+  };
+
+  // Schedule a meeting or session
+  const scheduleMeeting = () => {
+    if (!currentChat) return;
+    router.push(`/schedule?patientId=${currentChat.user_id}`);
+  };
+
+  // Auto-scroll to bottom when messages update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Format chat timestamp
+  const formatMessageTime = (timestamp) => {
+    if (!timestamp) return "";
+    return format(new Date(timestamp), "h:mm a");
+  };
 
   return (
-    <div className="flex h-screen max-h-screen overflow-hidden bg-[#2f3136] text-white">
+    <div className="flex h-screen max-h-screen overflow-hidden bg-gray-50">
       {/* Left sidebar - Chat list */}
-      <div className="w-1/4 bg-[#2f3136] flex flex-col border-r border-[#40444b]">
-        <div className="p-4 shadow-sm border-b border-[#40444b]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Patient Chats</h2>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#40444b]">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
+      <div className="w-1/3 border-r bg-white flex flex-col">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-bold">Patient Chats</h2>
+          <p className="text-muted-foreground text-sm">
+            Your conversations with patients
+          </p>
         </div>
 
-        <div className="px-2 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#b9bbbe]" />
-            <Input
-              placeholder="Search conversations"
-              className="pl-9 bg-[#202225] border-none rounded-md text-sm py-2 focus-visible:ring-1 focus-visible:ring-[#5865f2]"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 py-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto">
           {loading && chats.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div className="animate-pulse flex flex-col items-center">
-                <div className="h-12 w-12 bg-[#40444b] rounded-full mb-2"></div>
-                <div className="h-4 w-24 bg-[#40444b] rounded"></div>
-              </div>
+              <p>Loading chats...</p>
             </div>
           ) : chats.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[#b9bbbe]">No patient conversations yet</p>
+              <p className="text-muted-foreground">
+                No patient conversations yet
+              </p>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="divide-y">
               {chats.map((chat) => (
                 <div
                   key={chat.chat_id}
-                  className={cn(
-                    "flex items-start py-2 px-3 cursor-pointer transition-all duration-200 rounded-md",
-                    currentChat?.chat_id === chat.chat_id
-                      ? "bg-[#393c43]"
-                      : "hover:bg-[#36393f]"
-                  )}
+                  className={`flex items-start p-4 cursor-pointer hover:bg-gray-50 ${
+                    currentChat?.chat_id === chat.chat_id ? "bg-gray-100" : ""
+                  }`}
                   onClick={() => handleChatSelect(chat)}
                 >
-                  <Avatar className="h-10 w-10 mr-3 rounded-full">
-                    <AvatarImage src={chat.patient_avatar || ""} alt="Patient" />
-                    <AvatarFallback className="bg-[#5865f2] text-white">{chat.patient_name?.charAt(0) || "P"}</AvatarFallback>
+                  <Avatar className="h-12 w-12 mr-4">
+                    <AvatarImage
+                      src={chat.patient_avatar || ""}
+                      alt="Patient"
+                    />
+                    <AvatarFallback>
+                      {chat.patient_name?.charAt(0) || "P"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between">
-                      <h3 className="font-medium truncate text-[#ffffff]">
+                    <div className="flex justify-between items-baseline">
+                      <h3 className="font-medium truncate">
                         {chat.patient_name || "Patient"}
                       </h3>
-                      <span className="text-xs text-[#b9bbbe]">
+                      <span className="text-xs text-muted-foreground">
                         {chat.last_message
                           ? formatMessageTime(chat.last_message.createdAt)
                           : ""}
                       </span>
                     </div>
-                    <p className="text-sm text-[#b9bbbe] truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {chat.last_message
                         ? chat.last_message.content
                         : "No messages yet"}
                     </p>
                   </div>
                   {chat.unread_count > 0 && (
-                    <Badge
-                      className="ml-2 bg-[#5865f2] text-white border-none py-0.5 px-1.5 rounded-full text-xs font-semibold"
-                    >
+                    <Badge className="ml-2 bg-blue-500 text-white">
                       {chat.unread_count}
                     </Badge>
                   )}
@@ -219,192 +479,150 @@ const ChatPage = () => {
             </div>
           )}
         </div>
-
-        <div className="p-3 border-t border-[#40444b] bg-[#292b2f]">
-          <div className="flex items-center">
-            <Avatar className="h-9 w-9 mr-2">
-              <AvatarImage src={doctor?.doctor?.avatar || ""} alt="Doctor" />
-              <AvatarFallback className="bg-[#5865f2]">DR</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">
-                Dr. {doctor?.doctor?.name || "Doctor"}
-              </p>
-              <p className="text-xs text-[#b9bbbe]">Online</p>
-            </div>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#40444b]">
-              <User className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Right content area - Chat messages */}
-      <div className="flex-1 flex flex-col h-full bg-[#36393f]">
+      <div className="flex-1 flex flex-col h-full">
         {currentChat ? (
           <>
             {/* Chat header */}
-            <div className="p-4 shadow-sm border-b border-[#40444b] bg-[#36393f] flex items-center justify-between">
+            <div className="p-4 border-b bg-white flex items-center justify-between">
               <div className="flex items-center">
-                <Avatar className="h-8 w-8 mr-3">
+                <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage
                     src={currentChat.patient_avatar || ""}
                     alt="Patient"
                   />
-                  <AvatarFallback className="bg-[#5865f2] text-white">{currentChat.patient_name?.charAt(0) || "P"}</AvatarFallback>
+                  <AvatarFallback>
+                    {currentChat.patient_name?.charAt(0) || "P"}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-medium">
                     {currentChat.patient_name || "Patient"}
                   </h3>
                   {typing && (
-                    <p className="text-xs text-[#57f287] animate-pulse">Typing...</p>
+                    <p className="text-xs text-green-600">Typing...</p>
                   )}
                 </div>
               </div>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-2">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-[#40444b]"
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
                   onClick={openRecommendModal}
-                  title="Recommend Exercise Video"
                 >
-                  <PlayCircle className="h-5 w-5" />
+                  <PlayCircle className="h-4 w-4" />
+                  Recommend Video
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-[#40444b]"
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
                   onClick={scheduleMeeting}
-                  title="Schedule Video Consultation"
                 >
-                  <Calendar className="h-5 w-5" />
+                  <Calendar className="h-4 w-4" />
+                  Schedule
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-[#40444b]"
-                  title="Voice Call"
-                >
+                <Button variant="ghost" size="icon">
                   <Phone className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-[#40444b]"
-                  title="Video Call"
-                >
+                <Button variant="ghost" size="icon">
                   <VideoIcon className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-[#40444b]"
-                  title="More Options"
-                >
+                <Button variant="ghost" size="icon">
                   <MoreVertical className="h-5 w-5" />
                 </Button>
               </div>
             </div>
 
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="animate-pulse flex flex-col items-center">
-                    <div className="h-12 w-12 bg-[#40444b] rounded-full mb-2"></div>
-                    <div className="h-4 w-24 bg-[#40444b] rounded"></div>
-                  </div>
+                  <p>Loading messages...</p>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <div className="h-16 w-16 bg-[#5865f2] rounded-full flex items-center justify-center mb-4">
-                    <User className="h-8 w-8 text-white" />
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <p className="text-muted-foreground">No messages yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Start the conversation with your patient
+                    </p>
                   </div>
-                  <p className="text-lg font-medium mb-2">No messages yet</p>
-                  <p className="text-sm text-[#b9bbbe]">
-                    Start the conversation with your patient
-                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {messages.map((msg, index) => {
-                    const isFirstInGroup = index === 0 ||
-                      messages[index - 1].sender_type !== msg.sender_type;
-
-                    return (
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${
+                        msg.sender_type === "doctor"
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
+                    >
+                      {msg.sender_type !== "doctor" && (
+                        <Avatar className="h-8 w-8 mr-2 self-end">
+                          <AvatarImage
+                            src={currentChat.patient_avatar || ""}
+                            alt="Patient"
+                          />
+                          <AvatarFallback>
+                            {currentChat.patient_name?.charAt(0) || "P"}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       <div
-                        key={index}
-                        className={cn(
-                          "flex",
-                          msg.sender_type === "doctor" ? "justify-end" : "justify-start",
-                          !isFirstInGroup && msg.sender_type !== "doctor" && "pl-12",
-                          !isFirstInGroup && msg.sender_type === "doctor" && "pr-12",
-                        )}
+                        className={`max-w-[75%] px-4 py-2 rounded-lg ${
+                          msg.sender_type === "doctor"
+                            ? "bg-blue-500 text-white"
+                            : "bg-white text-gray-800 border"
+                        }`}
                       >
-                        {isFirstInGroup && msg.sender_type !== "doctor" && (
-                          <Avatar className="h-10 w-10 mr-3 mt-0.5">
-                            <AvatarImage src={currentChat.patient_avatar || ""} alt="Patient" />
-                            <AvatarFallback className="bg-[#5865f2] text-white">
-                              {currentChat.patient_name?.charAt(0) || "P"}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
+                        <p>{msg.content}</p>
                         <div
-                          className={cn(
-                            "max-w-[80%] px-4 py-2 rounded-2xl",
+                          className={`text-xs mt-1 ${
                             msg.sender_type === "doctor"
-                              ? "bg-[#5865f2] text-white"
-                              : "bg-[#40444b] text-white",
-                            isFirstInGroup && msg.sender_type !== "doctor" && "rounded-tl-none",
-                            isFirstInGroup && msg.sender_type === "doctor" && "rounded-tr-none",
-                          )}
+                              ? "text-blue-100"
+                              : "text-gray-400"
+                          }`}
                         >
-                          {isFirstInGroup && (
-                            <div className="flex justify-between items-center mb-1">
-                              <span className={cn(
-                                "font-medium text-sm",
-                                msg.sender_type === "doctor" ? "text-[#ffffff]" : "text-[#57f287]"
-                              )}>
-                                {msg.sender_type === "doctor" ? "You" : currentChat.patient_name}
-                              </span>
-                              <span className="text-xs opacity-70 ml-2">
-                                {formatMessageTime(msg.createdAt)}
-                              </span>
-                            </div>
-                          )}
-                          <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                          {formatMessageTime(msg.createdAt)}
                           {msg.sender_type === "doctor" && (
-                            <div className="text-xs mt-1 opacity-70 text-right">
+                            <span className="ml-2">
                               {msg.read ? "Read" : "Sent"}
-                            </div>
+                            </span>
                           )}
                         </div>
-                        {isFirstInGroup && msg.sender_type === "doctor" && (
-                          <Avatar className="h-10 w-10 ml-3 mt-0.5">
-                            <AvatarImage src={doctor?.doctor?.avatar || ""} alt="Doctor" />
-                            <AvatarFallback className="bg-[#5865f2] text-white">DR</AvatarFallback>
-                          </Avatar>
-                        )}
                       </div>
-                    );
-                  })}
+                      {msg.sender_type === "doctor" && (
+                        <Avatar className="h-8 w-8 ml-2 self-end">
+                          <AvatarImage
+                            src={doctor?.doctor?.avatar || ""}
+                            alt="Doctor"
+                          />
+                          <AvatarFallback>DR</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  ))}
                   <div ref={messagesEndRef} />
                 </div>
               )}
             </div>
 
             {/* Message input */}
-            <div className="p-3 bg-[#36393f]">
-              <div className="flex items-center bg-[#40444b] rounded-lg px-4 py-0">
-                <Button variant="ghost" size="icon" className="text-[#b9bbbe] hover:text-white h-8 w-8 rounded-full" title="Attach file">
+            <div className="p-4 border-t bg-white">
+              <div className="flex items-center">
+                <Button variant="ghost" size="icon">
                   <Paperclip className="h-5 w-5" />
                 </Button>
                 <Input
                   type="text"
-                  placeholder={`Message ${currentChat.patient_name || "Patient"}`}
-                  className="flex-1 mx-2 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder-[#b9bbbe] py-6"
+                  placeholder="Type a message..."
+                  className="flex-1 mx-2"
                   value={message}
                   onChange={handleMessageChange}
                   onKeyDown={(e) => {
@@ -414,86 +632,73 @@ const ChatPage = () => {
                     }
                   }}
                 />
-                <Button variant="ghost" size="icon" className="text-[#b9bbbe] hover:text-white h-8 w-8 rounded-full mr-1" title="Attach image">
-                  <Image className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-[#b9bbbe] hover:text-white h-8 w-8 rounded-full mr-1" title="Add emoji">
-                  <Smile className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-[#b9bbbe] hover:text-white h-8 w-8 rounded-full mr-1" title="Voice message">
+                <Button variant="ghost" size="icon" className="mr-2">
                   <Mic className="h-5 w-5" />
                 </Button>
                 <Button
                   onClick={sendMessage}
                   disabled={!message.trim()}
-                  size="icon"
-                  className="bg-[#5865f2] hover:bg-[#4752c4] h-8 w-8 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  <SendHorizontal className="h-4 w-4" />
+                  <SendHorizontal className="h-5 w-5" />
                 </Button>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full bg-[#36393f]">
-            <div className="text-center max-w-md p-8 rounded-lg">
-              <div className="h-24 w-24 bg-[#5865f2] rounded-full flex items-center justify-center mx-auto mb-6">
-                <User className="h-12 w-12 text-white" />
-              </div>
-              <h3 className="text-2xl font-medium mb-3">
-                Welcome to your patient chats
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center max-w-md">
+              <h3 className="text-xl font-medium mb-2">
+                Select a conversation
               </h3>
-              <p className="text-[#b9bbbe] mb-6">
-                Select a conversation from the list to start providing care to your patients
+              <p className="text-muted-foreground">
+                Choose a patient conversation from the list to start providing
+                care
               </p>
-              <Button
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white border-none"
-                onClick={() => document.querySelector('.custom-scrollbar').scrollTop = 0}
-              >
-                Browse conversations
-              </Button>
             </div>
           </div>
         )}
       </div>
 
       {/* Video Recommendation Modal */}
-      <Dialog open={isRecommendModalOpen} onOpenChange={setIsRecommendModalOpen}>
-        <DialogContent className="bg-[#36393f] text-white border-[#40444b] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <Dialog
+        open={isRecommendModalOpen}
+        onOpenChange={setIsRecommendModalOpen}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl">Recommend Exercise Videos</DialogTitle>
-            <DialogDescription className="text-[#b9bbbe]">
+            <DialogTitle>Recommend Exercise Videos</DialogTitle>
+            <DialogDescription>
               Search and recommend exercise videos to your patient.
             </DialogDescription>
           </DialogHeader>
 
           <div className="relative my-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#b9bbbe]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search videos by title or description..."
-              className="pl-10 bg-[#202225] border-[#40444b] text-white placeholder-[#b9bbbe] focus-visible:ring-[#5865f2] focus-visible:border-[#5865f2]"
+              className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="space-y-3 mt-2">
+          <div className="space-y-3 mt-2 max-h-[400px] overflow-y-auto">
             {loadingVideos ? (
               <div className="flex justify-center py-8">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="h-12 w-12 bg-[#40444b] rounded-full mb-2"></div>
-                  <div className="h-4 w-24 bg-[#40444b] rounded"></div>
-                </div>
+                <p>Loading videos...</p>
               </div>
             ) : getFilteredVideos().length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-[#b9bbbe]">No videos found matching your search</p>
+                <p className="text-muted-foreground">
+                  No videos found matching your search
+                </p>
               </div>
             ) : (
               getFilteredVideos().map((video) => (
-                <Card key={video._id} className="overflow-hidden bg-[#2f3136] border-[#40444b] text-white">
+                <Card key={video._id} className="overflow-hidden">
                   <div className="flex">
-                    <div className="w-1/3 bg-[#202225] flex items-center justify-center">
+                    <div className="w-1/3 bg-gray-100 flex items-center justify-center">
                       {video.thumbnail ? (
                         <img
                           src={video.thumbnail}
@@ -501,19 +706,19 @@ const ChatPage = () => {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <VideoIcon className="h-12 w-12 text-[#b9bbbe]" />
+                        <VideoIcon className="h-12 w-12 text-muted-foreground" />
                       )}
                     </div>
                     <div className="w-2/3 p-4">
-                      <h4 className="font-semibold text-sm text-white">{video.title}</h4>
-                      <p className="text-xs text-[#b9bbbe] line-clamp-2 mt-1">
+                      <h4 className="font-semibold text-sm">{video.title}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                         {video.description}
                       </p>
                       <div className="mt-3 flex justify-end">
                         <Button
                           size="sm"
                           onClick={() => recommendVideo(video._id)}
-                          className="bg-[#5865f2] hover:bg-[#4752c4] text-white border-none"
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
                         >
                           Recommend
                         </Button>
@@ -529,7 +734,6 @@ const ChatPage = () => {
             <Button
               variant="outline"
               onClick={() => setIsRecommendModalOpen(false)}
-              className="bg-transparent border-[#b9bbbe] text-white hover:bg-[#40444b] hover:text-white"
             >
               Cancel
             </Button>

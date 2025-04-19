@@ -29,7 +29,7 @@ export const createSession = async (req, res) => {
     const { videoId, userId } = req.body;
     console.log("VideoId: ", videoId, "UserId: ", userId);
     // Check if video exists and is prescribed to user
-    const video = await Video.findOne({
+    const video = await Video.find({
       _id: videoId,
       isPrescribed: true,
       prescribedTo: userId,

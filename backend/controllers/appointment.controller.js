@@ -11,6 +11,7 @@ export const submitQuestionAnswers = async (req, res) => {
       await Appointment.findByIdAndUpdate(appointmentId, {
         preReport: JSON.stringify(responses)
       });
+  
       console.log("Responses saved successfully for appointment ID:", appointmentId);
   
       res.status(200).json({ ok:true, message: "Answers saved successfully" });

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 // Assuming your styles are correctly set up
-import styles from '../../styles/Demo1.module.css'; // Ensure this path is correct
+ // Ensure this path is correct
 
 // Define types for MediaPipe/TensorFlow if available, otherwise use 'any' cautiously
 declare global {
