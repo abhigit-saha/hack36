@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 
 // Session subdocument schema
 const SessionSchema = new Schema({
-    videoUrl: {
-        type: String,
+    video: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Video',
         required: true
     },
     report: {
@@ -14,6 +15,10 @@ const SessionSchema = new Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+    schedule: {
+        type: Date,
+        required: true
     }
 });
 
@@ -42,7 +47,6 @@ const UserSchema = new Schema({
     sessions: {
         type: [SessionSchema],
         default: [],
-        // Not enforced by Mongoose, handled in app logic
     }
 });
 

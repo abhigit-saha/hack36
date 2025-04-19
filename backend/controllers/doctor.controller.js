@@ -5,12 +5,25 @@ import PreDiagnosis from "../models/preDiagnosis.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { setCookie } from "../helper/cookieHelper.js";
+import jwt from "jsonwebtoken";
+
 // Register a doctor
 export const DoctorRegister = async (req, res) => {
   const { email, name, password, liscence, specialization, location } =
     req.body;
 
   try {
+    if (
+      !email ||
+      !name ||
+      !password ||
+      !liscence ||
+      !specialization ||
+      !location
+    ) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const existingDoctor = await Doctor.findOne({ email });
     if (existingDoctor) {
       return res.status(400).json({ message: "Doctor already exists" });
@@ -33,6 +46,65 @@ export const DoctorRegister = async (req, res) => {
       .status(500)
       .json({ message: "Server error", error: err.message });
   }
+};
+
+export const GetDoctor = async (req, res) => {
+  try {
+    const authToken = req.cookies["auth_token"];
+    // console.log(authToken);
+
+    if (!authToken) {
+      return res
+        .status(401)
+        .json({ message: "No token provided. Unauthorized." });
+    }
+
+    jwt.verify(authToken, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: "Invalid or expired token." });
+      }
+
+      const doctor = await Doctor.findById(decoded.doctorId);
+      if (!doctor) {
+        return res.status(404).json({ message: "doctor not found." });
+      }
+
+      res.status(200).json({
+        message: "doctor details retrieved successfully.",
+        doctor,
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const LoginDoctor = async (req, res) => {
+  const { email, password } = req.body;
+  console.log("email-", email, "password", password);
+  const doctor = await Doctor.findOne({ email });
+  console.log(doctor);
+
+  if (!doctor) return res.status(401).json({ message: "Invalid credentials" });
+
+  // Compare password (assuming you have a comparePassword method)
+  const isMatch = await doctor.comparePassword(password);
+  console.log(isMatch);
+  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+  // Generate JWT token
+  const token = jwt.sign({ doctorId: doctor._id }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  // Set JWT in HTTP-only cookie
+  setCookie(res, "auth_token", token);
+
+  res.status(200).json({
+    message: "Login successful",
+    doctor: { id: doctor._id, email: doctor.email, role: doctor.role },
+  });
 };
 
 // Get all doctors
@@ -71,6 +143,7 @@ export const getDoctorById = async (req, res) => {
 
   try {
     const doctor = await Doctor.findById(id);
+    console.log(doctor);
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
@@ -173,43 +246,5 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
     return res.status(error.statusCode || 500).json({
       message: error.message || "Error fetching pre-diagnosis reports",
     });
-  }
-};
-
-import jwt from "jsonwebtoken";
-
-export const GetDoctor = async (req, res) => {
-  try {
-    const authToken = req.cookies["auth_token"];
-    // console.log(authToken);
-
-    if (!authToken) {
-      return res
-        .status(401)
-        .json({ message: "No token provided. Unauthorized." });
-    }
-
-    jwt.verify(authToken, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ message: "Invalid or expired token." });
-      }
-
-      const doctor = await Doctor.findById(decoded.doctorId);
-      if (!doctor) {
-        return res.status(404).json({ message: "doctor not found." });
-      }
-
-      res.status(200).json({
-        message: "doctor details retrieved successfully.",
-        doctor: {
-          id: doctor._id,
-          name: doctor.name,
-          email: doctor.email,
-        },
-      });
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
   }
 };

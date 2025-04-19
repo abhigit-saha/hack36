@@ -111,7 +111,9 @@ export default function DoctorProfilePage() {
             }),
           });
 
-          router.push(`/doctors/questions?appointmentId=${test._id}`);
+          const data = await test.json();
+
+          router.push(`/doctors/questions?appointmentId=${data._id}`);
         },
         prefill: {
           name: patient.name,

@@ -9,6 +9,7 @@ const DoctorRegisterPage = () => {
     password: '',
     liscence: '',
     specialization: '',
+    location: '',
   });
   const [message, setMessage] = useState('');
 
@@ -47,7 +48,7 @@ const DoctorRegisterPage = () => {
   return (
     <div className="max-w-md mx-auto p-6 mt-10 bg-white shadow rounded">
       <h2 className="text-xl font-bold mb-4">Doctor Registration</h2>
-      {message && <p className="mb-4 text-sm text-red-600">{message}</p>}
+      {message && <p className={`mb-4 text-sm ${message.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -85,6 +86,14 @@ const DoctorRegisterPage = () => {
           type="text"
           name="specialization"
           placeholder="Specialization"
+          required
+          onChange={handleChange}
+          className="w-full border px-3 py-2 rounded"
+        />
+        <input
+          type="text"
+          name="location"
+          placeholder="Location"
           required
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded"

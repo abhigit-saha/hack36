@@ -11,7 +11,7 @@ import { connectDb } from "./utils/connectDb.js";
 import { ChatSocketHandler } from "./controllers/chat.controller.js";
 import multer from "multer";
 import mongoose from "mongoose";
-// import AppointmentRouter from "./routes/appointment.routes.js";
+import AppointmentRouter from "./routes/appointment.routes.js";
 import PreDiagnosisRouter from "./routes/preDiagnosis.routes.js";
 const upload = multer({ dest: "uploads/" });
 import VideoRouter from "./routes/video.routes.js";
@@ -30,6 +30,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -42,8 +43,8 @@ app.use("/user", UserRouter);
 app.use("/doctor", DoctorRouter);
 app.use("/community", upload.single("video"), CommunityRouter);
 app.use("/chat", ChatRouter);
-// app.use("/appointment", AppointmentRouter);
-app.use("/api", VideoRouter);
+app.use("/appointment", AppointmentRouter);
+app.use("/video", VideoRouter);
 app.use("/api/pre-diagnosis", PreDiagnosisRouter);
 
 server.listen(PORT, "0.0.0.0", () => {

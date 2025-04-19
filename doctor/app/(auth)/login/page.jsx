@@ -24,7 +24,7 @@ export default function SignIn() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch("http://localhost:4000/auth/login", {
+      const response = await fetch("http://localhost:4000/doctor/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -34,8 +34,8 @@ export default function SignIn() {
       const data = await response.json();
 
       if (response.ok) {
-        dispatch(setUser({ email }));
-        window.location.href = "/";
+        dispatch(setUser({ ...data.doctor }))
+        window.location.href = "/"
       } else {
         setError(data.message || "Login failed. Please try again.");
       }

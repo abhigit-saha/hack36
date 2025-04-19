@@ -9,7 +9,7 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 export default function DoctorViewReportPage() {
   const searchParams = useSearchParams();
   const appointmentId = searchParams.get('appointmentId');
-  
+
   const [report, setReport] = useState(null);
   const [videos, setVideos] = useState([]);
   const [selectedVideos, setSelectedVideos] = useState([]);
@@ -120,7 +120,7 @@ export default function DoctorViewReportPage() {
           <h2 className="text-xl font-semibold mb-2">Error</h2>
           <p>{error}</p>
         </div>
-        <Button 
+        <Button
           className="mt-4"
           onClick={() => window.history.back()}
         >
@@ -139,7 +139,7 @@ export default function DoctorViewReportPage() {
           <p className="text-gray-600 mb-6">
             The patient has been prescribed the selected exercise videos.
           </p>
-          <Button 
+          <Button
             onClick={() => window.history.back()}
           >
             Go Back
@@ -152,7 +152,7 @@ export default function DoctorViewReportPage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Patient Pre-Diagnosis Report</h1>
-      
+
       {report && (
         <div className="space-y-6">
           <div className="p-6 bg-white rounded-lg shadow-md">
@@ -161,7 +161,7 @@ export default function DoctorViewReportPage() {
               {report.report}
             </div>
           </div>
-          
+
           <div className="p-6 bg-gray-50 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Questions & Answers</h2>
             <div className="space-y-4">
@@ -173,10 +173,10 @@ export default function DoctorViewReportPage() {
               ))}
             </div>
           </div>
-          
+
           <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">Prescribe Exercise Videos</h2>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Doctor Notes
@@ -189,16 +189,16 @@ export default function DoctorViewReportPage() {
                 placeholder="Add any additional notes or instructions for the patient..."
               />
             </div>
-            
+
             <div className="mb-4">
               <h3 className="text-lg font-medium mb-2">Available Videos</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {videos.map(video => (
-                  <div 
+                  <div
                     key={video._id}
                     className={`p-4 border rounded-md cursor-pointer ${
-                      selectedVideos.includes(video._id) 
-                        ? 'border-blue-500 bg-blue-50' 
+                      selectedVideos.includes(video._id)
+                        ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200'
                     }`}
                     onClick={() => handleVideoSelect(video._id)}
@@ -224,7 +224,7 @@ export default function DoctorViewReportPage() {
                 ))}
               </div>
             </div>
-            
+
             <div className="flex justify-end">
               <Button
                 onClick={handlePrescribe}
@@ -246,4 +246,4 @@ export default function DoctorViewReportPage() {
       )}
     </div>
   );
-} 
+}
