@@ -95,7 +95,6 @@ export const prescribeExerciseVideos = async (req, res) => {
     await Video.updateMany(
       { _id: { $in: videoIds } },
       {
-      {
         $set: {
           isPrescribed: true,
           prescribedBy: doctorId,
@@ -114,7 +113,6 @@ export const prescribeExerciseVideos = async (req, res) => {
     await appointment.save();
 
     return res.status(200).json(
-      new ApiResponse(200, {
       new ApiResponse(200, {
         message: "Exercise videos prescribed successfully",
         preDiagnosisId: preDiagnosis._id,
