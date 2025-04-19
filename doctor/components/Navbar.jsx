@@ -16,6 +16,8 @@ export default function Navbar({ user }) {
         <div className="hidden md:flex space-x-6 text-gray-700 font-medium">
           <Link href="/">Home</Link>
           <Link href="/appointments">Appointments</Link>
+          <Link href="/doctors">Doctors</Link>
+          <Link href="/physio">Physio</Link>
           <Link href="/reports">Reports</Link>
           <Link href="/profile">Profile</Link>
         </div>

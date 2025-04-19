@@ -5,8 +5,10 @@ import {
   getFilteredDoctors,
   getDoctorById,
   prescribeExerciseVideos,
-  getPatientPreDiagnosisReports
+  getPatientPreDiagnosisReports,
+  GetDoctor,
 } from "../controllers/doctor.controller.js";
+import { DoctorLogin } from "../controllers/auth.controller.js";
 
 const router = Router();
 
@@ -15,8 +17,8 @@ router.post("/register", DoctorRegister);
 router.get("/", getAllDoctors);
 router.get("/filter", getFilteredDoctors);
 router.get("/:id", getDoctorById);
-
-
+router.get("/login", DoctorLogin);
+router.get("/me", GetDoctor);
 
 // Prescribe exercise videos
 router.post("/prescribe", prescribeExerciseVideos);
@@ -25,4 +27,3 @@ router.post("/prescribe", prescribeExerciseVideos);
 router.get("/reports/pre-diagnosis", getPatientPreDiagnosisReports);
 
 export default router;
-

@@ -4,10 +4,11 @@ import Appointment from "../models/appointment.model.js";
 import PreDiagnosis from "../models/preDiagnosis.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import { setCookie } from "../helper/cookieHelper.js";
 // Register a doctor
 export const DoctorRegister = async (req, res) => {
-  const { email, name, password, liscence, specialization, location } = req.body;
+  const { email, name, password, liscence, specialization, location } =
+    req.body;
 
   try {
     const existingDoctor = await Doctor.findOne({ email });
@@ -21,14 +22,16 @@ export const DoctorRegister = async (req, res) => {
       password,
       liscence,
       specialization,
-      location
+      location,
     });
 
     await newDoctor.save();
 
     return res.status(200).json({ message: "Registered", doctor: newDoctor });
   } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 };
 
@@ -38,7 +41,9 @@ export const getAllDoctors = async (req, res) => {
     const doctors = await Doctor.find({});
     return res.status(200).json(doctors);
   } catch (err) {
-    return res.status(500).json({ message: "Failed to fetch doctors", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch doctors", error: err.message });
   }
 };
 
@@ -54,7 +59,9 @@ export const getFilteredDoctors = async (req, res) => {
     const doctors = await Doctor.find(filter);
     return res.status(200).json(doctors);
   } catch (err) {
-    return res.status(500).json({ message: "Error fetching doctors", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Error fetching doctors", error: err.message });
   }
 };
 
@@ -66,11 +73,12 @@ export const getDoctorById = async (req, res) => {
     const doctor = await Doctor.findById(id);
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
-      return res.status(404).json({ message: "Doctor not found" });
     }
     return res.status(200).json(doctor);
   } catch (err) {
-    return res.status(500).json({ message: "Error fetching doctor", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Error fetching doctor", error: err.message });
   }
 };
 
@@ -80,7 +88,10 @@ export const prescribeExerciseVideos = async (req, res) => {
     const { appointmentId, videoIds, notes } = req.body;
     const doctorId = req.user._id;
 
-    const appointment = await Appointment.findOne({ _id: appointmentId, doctorId });
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      doctorId,
+    });
 
     if (!appointment) {
       throw new ApiError(404, "Appointment not found");
@@ -94,7 +105,6 @@ export const prescribeExerciseVideos = async (req, res) => {
 
     await Video.updateMany(
       { _id: { $in: videoIds } },
-      {
       {
         $set: {
           isPrescribed: true,
@@ -115,14 +125,13 @@ export const prescribeExerciseVideos = async (req, res) => {
 
     return res.status(200).json(
       new ApiResponse(200, {
-      new ApiResponse(200, {
         message: "Exercise videos prescribed successfully",
         preDiagnosisId: preDiagnosis._id,
       })
     );
   } catch (error) {
     return res.status(error.statusCode || 500).json({
-      message: error.message || "Error prescribing exercise videos"
+      message: error.message || "Error prescribing exercise videos",
     });
   }
 };
@@ -134,13 +143,13 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
 
     const appointments = await Appointment.find({ doctorId })
       .populate({
-        path: 'preDiagnosisId',
+        path: "preDiagnosisId",
         populate: {
-          path: 'userId',
-          select: 'name email'
-        }
+          path: "userId",
+          select: "name email",
+        },
       })
-      .populate('patientId', 'name email');
+      .populate("patientId", "name email");
 
     const reports = appointments
       .filter((app) => app.preDiagnosisId)
@@ -148,16 +157,59 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
         appointmentId: app._id,
         appointmentDate: app.appointmentDate,
         patient: app.patientId,
-        preDiagnosis: app.preDiagnosisId
+        preDiagnosis: app.preDiagnosisId,
       }));
 
-    return res.status(200).json(
-      new ApiResponse(200, reports, "Pre-diagnosis reports fetched successfully")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          reports,
+          "Pre-diagnosis reports fetched successfully"
+        )
+      );
   } catch (error) {
     return res.status(error.statusCode || 500).json({
-      message: error.message || "Error fetching pre-diagnosis reports"
+      message: error.message || "Error fetching pre-diagnosis reports",
     });
   }
 };
 
+import jwt from "jsonwebtoken";
+
+export const GetDoctor = async (req, res) => {
+  try {
+    const authToken = req.cookies["auth_token"];
+    // console.log(authToken);
+
+    if (!authToken) {
+      return res
+        .status(401)
+        .json({ message: "No token provided. Unauthorized." });
+    }
+
+    jwt.verify(authToken, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: "Invalid or expired token." });
+      }
+
+      const doctor = await Doctor.findById(decoded.doctorId);
+      if (!doctor) {
+        return res.status(404).json({ message: "doctor not found." });
+      }
+
+      res.status(200).json({
+        message: "doctor details retrieved successfully.",
+        doctor: {
+          id: doctor._id,
+          name: doctor.name,
+          email: doctor.email,
+        },
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
