@@ -66,6 +66,7 @@ export const getDoctorById = async (req, res) => {
     const doctor = await Doctor.findById(id);
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
+      return res.status(404).json({ message: "Doctor not found" });
     }
     return res.status(200).json(doctor);
   } catch (err) {
@@ -94,13 +95,14 @@ export const prescribeExerciseVideos = async (req, res) => {
     await Video.updateMany(
       { _id: { $in: videoIds } },
       {
+      {
         $set: {
           isPrescribed: true,
-          prescribedBy: doctorId
+          prescribedBy: doctorId,
         },
         $addToSet: {
-          prescribedTo: appointment.patientId
-        }
+          prescribedTo: appointment.patientId,
+        },
       }
     );
 
@@ -113,8 +115,9 @@ export const prescribeExerciseVideos = async (req, res) => {
 
     return res.status(200).json(
       new ApiResponse(200, {
+      new ApiResponse(200, {
         message: "Exercise videos prescribed successfully",
-        preDiagnosisId: preDiagnosis._id
+        preDiagnosisId: preDiagnosis._id,
       })
     );
   } catch (error) {
@@ -140,8 +143,8 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
       .populate('patientId', 'name email');
 
     const reports = appointments
-      .filter(app => app.preDiagnosisId)
-      .map(app => ({
+      .filter((app) => app.preDiagnosisId)
+      .map((app) => ({
         appointmentId: app._id,
         appointmentDate: app.appointmentDate,
         patient: app.patientId,
@@ -151,6 +154,102 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
     return res.status(200).json(
       new ApiResponse(200, reports, "Pre-diagnosis reports fetched successfully")
     );
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Error fetching pre-diagnosis reports"
+    });
+  }
+};
+
+// Prescribe exercise videos to a patient
+export const prescribeExerciseVideos = async (req, res) => {
+  try {
+    const { appointmentId, videoIds, notes } = req.body;
+    const doctorId = req.user._id;
+
+    // Verify appointment exists and belongs to doctor
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      doctorId,
+    });
+
+    if (!appointment) {
+      throw new ApiError(404, "Appointment not found");
+    }
+
+    // Get pre-diagnosis report
+    const preDiagnosis = await PreDiagnosis.findOne({ appointmentId });
+    if (!preDiagnosis) {
+      throw new ApiError(404, "Pre-diagnosis report not found");
+    }
+
+    // Update videos with prescription information
+    await Video.updateMany(
+      { _id: { $in: videoIds } },
+      {
+        $set: {
+          isPrescribed: true,
+          prescribedBy: doctorId,
+        },
+        $addToSet: {
+          prescribedTo: appointment.patientId,
+        },
+      }
+    );
+
+    // Update pre-diagnosis status
+    preDiagnosis.status = "prescribed";
+    preDiagnosis.doctorNotes = notes;
+    await preDiagnosis.save();
+
+    // Update appointment status
+    appointment.status = "completed";
+    await appointment.save();
+
+    return res.status(200).json(
+      new ApiResponse(200, {
+        message: "Exercise videos prescribed successfully",
+        preDiagnosisId: preDiagnosis._id,
+      })
+    );
+  } catch (error) {
+    throw new ApiError(500, "Error prescribing exercise videos");
+  }
+};
+
+// Get patient's pre-diagnosis reports
+export const getPatientPreDiagnosisReports = async (req, res) => {
+  try {
+    const doctorId = req.user._id;
+
+    // Get all appointments for this doctor
+    const appointments = await Appointment.find({ doctorId }).populate({
+      path: "preDiagnosisId",
+      populate: {
+        path: "userId",
+        select: "name email",
+      },
+    });
+
+    // Filter appointments with pre-diagnosis reports
+    const reports = appointments
+      .filter((app) => app.preDiagnosisId)
+      .map((app) => ({
+        appointmentId: app._id,
+        appointmentDate: app.appointmentDate,
+        patient: app.preDiagnosisId.userId,
+        preDiagnosis: app.preDiagnosisId,
+      }));
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          reports,
+          "Pre-diagnosis reports fetched successfully"
+        )
+      );
   } catch (error) {
     return res.status(error.statusCode || 500).json({
       message: error.message || "Error fetching pre-diagnosis reports"
