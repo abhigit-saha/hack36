@@ -1,10 +1,10 @@
 import Razorpay from 'razorpay';
 import express from 'express';
 import Appointment from '../models/appointment.model.js';
-import { BookAppointment, submitQuestionAnswers } from '../controllers/appointment.controller.js';
+import { BookAppointment } from '../controllers/appointment.controller.js';
 
 const router = express.Router();
-
+console.log( "Highlight",process.env.RAZORPAY_SECRET)
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_SECRET,
@@ -27,7 +27,6 @@ router.post('/payment', async (req, res) => {
   }
 });
 
-router.post('/question/:appointmentId', submitQuestionAnswers)
 
 router.post('/book', BookAppointment )
 

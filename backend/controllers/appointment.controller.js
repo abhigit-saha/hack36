@@ -1,21 +1,5 @@
 import Appointment from "../models/appointment.model.js";
 
-export const submitQuestionAnswers = async (req, res) => {
-    const { appointmentId } = req.params;
-    const { responses } = req.body;
-  
-    try {
-      // Save in DB – e.g., add it to the existing appointment
-      await Appointment.findByIdAndUpdate(appointmentId, {
-        preReport: JSON.stringify(responses)
-      });
-  
-      res.status(200).json({ message: "Answers saved successfully" });
-    } catch (error) {
-      console.error("Error saving answers:", error);
-      res.status(500).json({ message: "Error saving answers" });
-    }
-  };
 
 
   export const BookAppointment = async (req, res) => {
