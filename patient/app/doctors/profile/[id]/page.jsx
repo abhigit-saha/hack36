@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
-import { Mail, Award, MapPin, Clock, User, Stethoscope, Calendar } from 'lucide-react';
+import { Mail, Award, MapPin, Clock, User, Stethoscope, Calendar, Building, GraduationCap, Briefcase, DollarSign } from 'lucide-react';
 
 export default function DoctorProfilePage() {
   const params = useParams();
@@ -31,9 +31,7 @@ export default function DoctorProfilePage() {
   useEffect(() => {
     const fetchDoctor = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:4000/doctor/profile/${doctorId}`
-        );
+        const res = await fetch(`http://localhost:4000/doctor/profile/${doctorId}`);
         const data = await res.json();
         if (res.ok) {
           setDoctor(data);
@@ -55,8 +53,7 @@ export default function DoctorProfilePage() {
 
         const data = await res.json();
         if (res.ok) {
-          setPatient(data);
-          console.log("Patient data:", data);
+          setPatient(data.user);
         } else {
           console.error("Patient not found");
         }
@@ -84,13 +81,16 @@ export default function DoctorProfilePage() {
       const res = await fetch("http://localhost:4000/appointment/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 50000, doctorId }),
+        body: JSON.stringify({ 
+          amount: doctor.consultationFee * 100, // Convert to paise
+          doctorId 
+        }),
       });
 
       const data = await res.json();
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // put in .env.local
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: data.amount,
         currency: data.currency,
         order_id: data.id,
@@ -102,14 +102,13 @@ export default function DoctorProfilePage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               doctorId,
-              patientId: patient.user.id,
+              patientId: patient.id,
               paymentId: response.razorpay_payment_id,
             }),
           });
 
           const data = await test.json();
-
-          router.push(`/doctors/questions?appointmentId=${data._id}`);
+          router.push(`/doctors/questions?appointmentId=${data._id}&doctorId=${doctorId}`);
         },
         prefill: {
           name: patient.name,
@@ -162,7 +161,7 @@ export default function DoctorProfilePage() {
                 <User className="w-10 h-10 text-teal-400" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold text-teal-400">Dr. {doctor.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-teal-400">Dr. Ayush</CardTitle>
                 <p className="text-gray-400 mt-1">{doctor.specialization}</p>
               </div>
             </div>
@@ -183,16 +182,46 @@ export default function DoctorProfilePage() {
               </div>
               <div className="flex items-center gap-3 text-gray-300">
                 <Clock className="h-5 w-5 text-teal-400" />
-                <span>Experience: {doctor.experience || 'Not specified'}</span>
+                <span>Experience: {doctor.experience?.years || 0} years</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <DollarSign className="h-5 w-5 text-teal-400" />
+                <span>Consultation Fee: ₹{doctor.consultationFee || 0}</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <Calendar className="h-5 w-5 text-teal-400" />
+                <span>Availability: {doctor.availability?.isAvailable ? 'Available' : 'Not Available'}</span>
               </div>
             </div>
 
-            {doctor.bio && (
+            {doctor.experience?.previousHospitals && doctor.experience.previousHospitals.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-teal-400 mb-3">About</h3>
-                <p className="text-gray-300 bg-[#21262D] p-4 rounded-lg border border-gray-700">
-                  {doctor.bio}
-                </p>
+                <h3 className="text-lg font-semibold text-teal-400 mb-3">Previous Hospitals</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {doctor.experience.previousHospitals.map((hospital, index) => (
+                    <div key={index} className="flex items-center gap-3 text-gray-300 bg-[#21262D] p-3 rounded-lg">
+                      <Building className="h-5 w-5 text-teal-400" />
+                      <span>{hospital}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {doctor.qualifications && doctor.qualifications.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-teal-400 mb-3">Qualifications</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {doctor.qualifications.map((qual, index) => (
+                    <div key={index} className="flex items-center gap-3 text-gray-300 bg-[#21262D] p-3 rounded-lg">
+                      <GraduationCap className="h-5 w-5 text-teal-400" />
+                      <div>
+                        <p className="font-medium">{qual.degree}</p>
+                        <p className="text-sm text-gray-400">{qual.institution} ({qual.year})</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -202,7 +231,7 @@ export default function DoctorProfilePage() {
                 className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white transition-all duration-300 flex items-center gap-2"
               >
                 <Calendar className="h-4 w-4" />
-                Book Appointment (₹500)
+                Book Appointment (₹{doctor.consultationFee || 0})
               </Button>
             </div>
           </CardContent>

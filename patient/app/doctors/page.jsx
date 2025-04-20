@@ -25,12 +25,37 @@ const DoctorsPage = () => {
       url += `?${filterType}=${encodeURIComponent(value)}`
     }
 
+    console.log('Fetching doctors from:', url)
+    console.log('Current filter type:', filterType)
+    console.log('Current filter value:', value)
+
     try {
       const res = await fetch(url)
+      console.log('API Response status:', res.status)
+      
+      if (!res.ok) {
+        console.error('API Error:', res.status, res.statusText)
+        throw new Error(`Failed to fetch doctors: ${res.status} ${res.statusText}`)
+      }
+
       const data = await res.json()
-      setDoctors(data)
+      console.log('API Response data:', data)
+
+      // Handle the nested doctors array in the response
+      let doctorsArray = []
+      if (data && data.doctors && Array.isArray(data.doctors)) {
+        doctorsArray = data.doctors
+      } else if (Array.isArray(data)) {
+        doctorsArray = data
+      } else if (data && typeof data === 'object') {
+        doctorsArray = [data]
+      }
+
+      console.log('Processed doctors array:', doctorsArray)
+      setDoctors(doctorsArray)
     } catch (err) {
-      console.error('Failed to fetch doctors:', err)
+      console.error('Error in fetchDoctors:', err)
+      setDoctors([])
     } finally {
       setIsLoading(false)
     }
@@ -115,7 +140,7 @@ const DoctorsPage = () => {
               </div>
             </div>
           </div>
-        ) : doctors.length === 0 ? (
+        ) : !Array.isArray(doctors) || doctors.length === 0 ? (
           <div className="text-center py-16 bg-[#161B22] rounded-xl border border-gray-800 shadow-lg">
             <p className="text-xl text-gray-400">No doctors found matching your criteria.</p>
             <Button
@@ -134,7 +159,7 @@ const DoctorsPage = () => {
               >
                 <CardHeader className="pb-2">
                   <h2 className="text-xl font-bold text-teal-400 group-hover:text-teal-300 transition-colors duration-300">
-                    {doctor.name}
+                    Dr. {doctor.name}
                   </h2>
                   <p className="text-sm text-gray-400">{doctor.specialization}</p>
                 </CardHeader>
@@ -150,6 +175,24 @@ const DoctorsPage = () => {
                   <div className="flex items-center text-gray-300">
                     <MapPin className="h-4 w-4 mr-2 text-teal-400" />
                     <span>{doctor.location}</span>
+                  </div>
+                  <div className="flex items-center text-gray-300">
+                    <Calendar className="h-4 w-4 mr-2 text-teal-400" />
+                    <span>Experience: {doctor.experience?.years || 0} years</span>
+                  </div>
+                  <div className="flex items-center text-gray-300">
+                    <Award className="h-4 w-4 mr-2 text-teal-400" />
+                    <span>Fee: ₹{doctor.consultationFee || 0}</span>
+                  </div>
+                  {doctor.qualifications && doctor.qualifications.length > 0 && (
+                    <div className="flex items-center text-gray-300">
+                      <Award className="h-4 w-4 mr-2 text-teal-400" />
+                      <span>{doctor.qualifications[0].degree} - {doctor.qualifications[0].institution}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center text-gray-300">
+                    <Calendar className="h-4 w-4 mr-2 text-teal-400" />
+                    <span>Availability: {doctor.availability?.isAvailable ? 'Available' : 'Not Available'}</span>
                   </div>
                   <div className="pt-4">
                     <a

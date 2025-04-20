@@ -292,7 +292,7 @@ const ChatPage = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline">
                       <h3 className="font-medium truncate">
-                        Dr. {chat.doctor_name || "Doctor"}
+                        Dr. {chat.doctor_name || "Sunil"}
                       </h3>
                       <span className="text-xs text-muted-foreground">
                         {chat.last_message
