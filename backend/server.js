@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import AuthRouter from "./routes/auth.routes.js";
 import UserRouter from "./routes/user.routes.js";
 import CommunityRouter from "./routes/community.routes.js";
-import DoctorRouter from "./routes/doctor.routes.js";
+import doctorRoutes from './routes/doctor.routes.js';
 import ChatRouter from "./routes/chat.routes.js";
 import { connectDb } from "./utils/connectDb.js";
 import { ChatSocketHandler } from "./controllers/chat.controller.js";
@@ -41,7 +41,7 @@ app.set("io", chatHandler.getIO());
 
 app.use("/auth", AuthRouter);
 app.use("/user", UserRouter);
-app.use("/doctor", DoctorRouter);
+app.use("/doctor", doctorRoutes);
 app.use("/community", upload.single("video"), CommunityRouter);
 app.use("/chat", ChatRouter);
 app.use("/appointment", AppointmentRouter);

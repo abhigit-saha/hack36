@@ -1,30 +1,33 @@
 import { Router } from "express";
 import {
   DoctorRegister,
+  LoginDoctor,
+  GetDoctorProfile,
+  UpdateBasicInfo,
+  UpdateProfessionalInfo,
+  UpdateAvailability,
+  getDoctorById,
   getAllDoctors,
   getFilteredDoctors,
-  getDoctorById,
-  prescribeExerciseVideos,
-  getPatientPreDiagnosisReports,LoginDoctor, GetDoctor,
-  SuggestDoctor
+  getDoctorListings
 } from "../controllers/doctor.controller.js";
-import { DoctorLogin } from "../controllers/auth.controller.js";
 
 const router = Router();
 
 // Public routes
 router.post("/register", DoctorRegister);
+router.post("/login", LoginDoctor);
 router.get("/", getAllDoctors);
 router.get("/filter", getFilteredDoctors);
+router.get("/listings", getDoctorListings);
+
+// Profile routes
+router.get("/profile", GetDoctorProfile);
 router.get("/profile/:id", getDoctorById);
-router.post("/login",LoginDoctor);
-router.get("/me",GetDoctor)
-router.post("/suggest",SuggestDoctor);
 
-
-
-router.post("/prescribe", prescribeExerciseVideos);
-
-router.get("/reports/pre-diagnosis", getPatientPreDiagnosisReports);
+// Update routes
+router.put("/basic-info", UpdateBasicInfo);
+router.put("/professional-info", UpdateProfessionalInfo);
+router.put("/availability", UpdateAvailability);
 
 export default router;

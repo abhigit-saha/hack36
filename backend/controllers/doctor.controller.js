@@ -127,29 +127,47 @@ export const GetDoctor = async (req, res) => {
 
 export const LoginDoctor = async (req, res) => {
   const { email, password } = req.body;
-  console.log("email-", email, "password", password);
-  const doctor = await Doctor.findOne({ email });
-  console.log(doctor);
 
-  if (!doctor) return res.status(401).json({ message: "Invalid credentials" });
+  try {
+    const doctor = await Doctor.findOne({ email });
 
-  // Compare password (assuming you have a comparePassword method)
-  const isMatch = await doctor.comparePassword(password);
-  console.log(isMatch);
-  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    if (!doctor) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-  // Generate JWT token
-  const token = jwt.sign({ doctorId: doctor._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+    const isMatch = await doctor.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-  // Set JWT in HTTP-only cookie
-  setCookie(res, "auth_token", token);
+    // Generate JWT token
+    const token = jwt.sign(
+      { doctorId: doctor._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-  res.status(200).json({
-    message: "Login successful",
-    doctor: { id: doctor._id, email: doctor.email, role: doctor.role },
-  });
+    // Set JWT in HTTP-only cookie
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.status(200).json({
+      message: 'Login successful',
+      doctor: {
+        id: doctor._id,
+        name: doctor.name,
+        email: doctor.email,
+        role: doctor.role
+      }
+    });
+  } catch (error) {
+    console.error('LoginDoctor error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 };
 
 // Get all doctors
@@ -166,19 +184,44 @@ export const getAllDoctors = async (req, res) => {
 
 // Get doctors by filter
 export const getFilteredDoctors = async (req, res) => {
-  const { specialization, location } = req.query;
-
-  const filter = {};
-  if (specialization) filter.specialization = specialization;
-  if (location) filter.location = location;
-
   try {
-    const doctors = await Doctor.find(filter);
-    return res.status(200).json(doctors);
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Error fetching doctors", error: err.message });
+    const { specialization, location, minRating, maxFee, availability } = req.query;
+    let query = {};
+
+    if (specialization) {
+      query.specialization = { $regex: specialization, $options: 'i' };
+    }
+
+    if (location) {
+      query['address.city'] = { $regex: location, $options: 'i' };
+    }
+
+    if (minRating) {
+      query.rating = { $gte: parseFloat(minRating) };
+    }
+
+    if (maxFee) {
+      query.consultationFee = { $lte: parseFloat(maxFee) };
+    }
+
+    if (availability === 'true') {
+      query['availability.isAvailable'] = true;
+    }
+
+    const doctors = await Doctor.find(query)
+      .select('-password -medicalHistory -lifestyle')
+      .sort({ rating: -1, experience: -1 });
+
+    res.status(200).json({
+      success: true,
+      doctors
+    });
+  } catch (error) {
+    console.error('Error filtering doctors:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to filter doctors'
+    });
   }
 };
 
@@ -289,6 +332,308 @@ export const getPatientPreDiagnosisReports = async (req, res) => {
   } catch (error) {
     return res.status(error.statusCode || 500).json({
       message: error.message || "Error fetching pre-diagnosis reports",
+    });
+  }
+};
+
+export const GetDoctorProfile = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    
+    if (!decoded.doctorId) {
+      return res.status(401).json({ message: 'Invalid token format.' });
+    }
+
+    const doctor = await Doctor.findById(decoded.doctorId).select('-password');
+
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Doctor profile retrieved successfully.',
+      doctor: {
+        _id: doctor._id,
+        name: doctor.name,
+        email: doctor.email,
+        phone: doctor.phone,
+        dateOfBirth: doctor.dateOfBirth,
+        gender: doctor.gender,
+        address: doctor.address || {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: ''
+        },
+        profilePicture: doctor.profilePicture || '',
+        license: doctor.license,
+        specialization: doctor.specialization || '',
+        qualifications: doctor.qualifications || [],
+        experience: doctor.experience || {
+          years: 0,
+          previousHospitals: []
+        },
+        availability: doctor.availability || {
+          days: [],
+          isAvailable: true
+        },
+        consultationFee: doctor.consultationFee || 0,
+        languages: doctor.languages || [],
+        verified: doctor.verified,
+        role: doctor.role,
+        createdAt: doctor.createdAt,
+        updatedAt: doctor.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('GetDoctorProfile error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const UpdateBasicInfo = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    const { name, phone, dateOfBirth, gender, address } = req.body;
+
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      decoded.doctorId,
+      {
+        name,
+        phone,
+        dateOfBirth,
+        gender,
+        address
+      },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Basic information updated successfully.',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const UpdateProfessionalInfo = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    const { specialization, qualifications, experience, consultationFee, languages } = req.body;
+
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      decoded.doctorId,
+      {
+        specialization,
+        qualifications,
+        experience,
+        consultationFee,
+        languages
+      },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Professional information updated successfully.',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const UpdateAvailability = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    const { availability } = req.body;
+
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      decoded.doctorId,
+      { availability },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Availability updated successfully.',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const UpdateMedicalHistory = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    const { medicalHistory } = req.body;
+
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      decoded.doctorId,
+      { medicalHistory },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Medical history updated successfully.',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const UpdateLifestyle = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    const { lifestyle } = req.body;
+
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      decoded.doctorId,
+      { lifestyle },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Lifestyle information updated successfully.',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const UpdateEmergencyContact = async (req, res) => {
+  try {
+    const authToken = req.cookies['auth_token'];
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'No token provided. Unauthorized.' });
+    }
+
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+    const { emergencyContact } = req.body;
+
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      decoded.doctorId,
+      { emergencyContact },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Emergency contact updated successfully.',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const getDoctorListings = async (req, res) => {
+  try {
+    const doctors = await Doctor.find()
+      .select('-password -medicalHistory -lifestyle')
+      .sort({ rating: -1, experience: -1 });
+
+    res.status(200).json({
+      success: true,
+      doctors
+    });
+  } catch (error) {
+    console.error('Error fetching doctor listings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch doctor listings'
     });
   }
 };

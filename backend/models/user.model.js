@@ -25,6 +25,7 @@ const SessionSchema = new Schema({
 const UserSchema = new Schema({
     name: {
         type: String,
+        required: true
     },
     password: {
         type: String,
@@ -34,6 +35,70 @@ const UserSchema = new Schema({
         type: String,
         required: true,
         unique: true
+    },
+    phone: {
+        type: String,
+    },
+    dateOfBirth: {
+        type: Date
+    },
+    gender: {
+        type: String,
+        enum: ['Male', 'Female', 'Other']
+    },
+    bloodGroup: {
+        type: String,
+        enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    },
+    height: {
+        type: Number
+    },
+    weight: {
+        type: Number
+    },
+    address: {
+        street: String,
+        city: String,
+        state: String,
+        zipCode: String
+    },
+    profilePicture: {
+        type: String,
+        default: ''
+    },
+    medicalHistory: {
+        allergies: [String],
+        currentMedications: [String],
+        pastSurgeries: [String],
+        chronicConditions: [String]
+    },
+    lifestyle: {
+        smoking: {
+            type: String,
+            enum: ['Never', 'Former', 'Current'],
+            default: 'Never'
+        },
+        alcohol: {
+            type: String,
+            enum: ['Never', 'Occasional', 'Regular'],
+            default: 'Never'
+        },
+        exercise: {
+            type: String,
+            enum: ['None', '1-2 times/week', '3-4 times/week', '5+ times/week'],
+            default: 'None'
+        },
+        sleepHours: {
+            type: Number,
+            min: 0,
+            max: 24,
+            default: 8
+        }
+    },
+    emergencyContact: {
+        name: String,
+        relationship: String,
+        phone: String
     },
     verified: {
         type: Boolean,
